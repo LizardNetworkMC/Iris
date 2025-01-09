@@ -32,6 +32,7 @@ import com.volmit.iris.engine.object.IrisDimension;
 import com.volmit.iris.util.collection.KMap;
 import com.volmit.iris.util.exceptions.IrisException;
 import com.volmit.iris.util.format.Form;
+import com.volmit.iris.util.consts.GitHub;
 import com.volmit.iris.util.io.IO;
 import com.volmit.iris.util.json.JSONException;
 import com.volmit.iris.util.json.JSONObject;
@@ -64,7 +65,7 @@ public class StudioSVC implements IrisService {
             if (!f.exists()) {
                 Iris.info("Downloading Default Pack " + pack);
                 if (pack.equals("overworld")) {
-                    String url = "https://github.com/IrisDimensions/overworld/releases/download/" + Iris.OVERWORLD_TAG + "/overworld.zip";
+                    String url = GitHub.getDimensionPackArchiveUrl();
                     Iris.service(StudioSVC.class).downloadRelease(Iris.getSender(), url, false, false);
                 } else {
                     downloadSearch(Iris.getSender(), pack, false);
@@ -174,7 +175,7 @@ public class StudioSVC implements IrisService {
             Iris.info("Assuming URL " + url);
             String branch = "master";
             String[] nodes = url.split("\\Q/\\E");
-            String repo = nodes.length == 1 ? "IrisDimensions/" + nodes[0] : nodes[0] + "/" + nodes[1];
+            String repo = nodes.length == 1 ? GitHub.getDimensionPackOrganization() + "/" + nodes[0] : nodes[0] + "/" + nodes[1];
             branch = nodes.length > 2 ? nodes[2] : branch;
             download(sender, repo, branch, trim, forceOverwrite, false);
         } catch (Throwable e) {
@@ -186,11 +187,11 @@ public class StudioSVC implements IrisService {
 
     public void downloadRelease(VolmitSender sender, String url, boolean trim, boolean forceOverwrite) {
         try {
-            download(sender, "IrisDimensions", url, trim, forceOverwrite, true);
+            download(sender, GitHub.getDimensionPackOrganization(), url, trim, forceOverwrite, true);
         } catch (Throwable e) {
             Iris.reportError(e);
             e.printStackTrace();
-            sender.sendMessage("Failed to download 'IrisDimensions/overworld' from " + url + ".");
+            sender.sendMessage(String.format("Failed to download '%s' from %s.", GitHub.getDimensionPackRepo(), url));
         }
     }
 
@@ -209,7 +210,7 @@ public class StudioSVC implements IrisService {
         if (zip == null || !zip.exists()) {
             sender.sendMessage("Failed to find pack at " + url);
             sender.sendMessage("Make sure you specified the correct repo and branch!");
-            sender.sendMessage("For example: /iris download IrisDimensions/overworld branch=master");
+            sender.sendMessage(String.format("For example: /iris download %s branch=master", GitHub.getDimensionPackRepo()));
             return;
         }
         sender.sendMessage("Unpacking " + repo);
@@ -224,8 +225,8 @@ public class StudioSVC implements IrisService {
                             1. Do you have a functioning internet connection?
                             2. Did the download corrupt?
                             3. Try deleting the */plugins/iris/packs folder and re-download.
-                            4. Download the pack from the GitHub repo: https://github.com/IrisDimensions/overworld
-                            5. Contact support (if all other options do not help)"""
+                            4. Download the pack from the GitHub repo:\s""" + GitHub.getDimensionPackBaseUrl() + """
+                            \n5. Contact support (if all other options do not help)"""
             );
         }
         File dir = null;
@@ -321,8 +322,9 @@ public class StudioSVC implements IrisService {
         }
 
         // TEMP FIX
-        l.put("IrisDimensions/overworld/master", "IrisDimensions/overworld/stable");
-        l.put("overworld", "IrisDimensions/overworld/stable");
+        String repo = GitHub.getDimensionPackRepo();
+        l.put(repo + "/master", repo + "/stable");
+        l.put(GitHub.getDimensionPackName(), repo + "/stable");
         return l;
     }
 

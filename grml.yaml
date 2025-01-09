@@ -1,0 +1,25 @@
+# Changes (YYYY-MM-DD):
+#   - 2024-01-04 @xIRoXaSx: Added grml config.
+
+version: 3
+project: Iris
+interpreter: bash
+env:
+    # === General vars.
+    PROJECT_VERSION: 0.0.1
+    PATH_BIN:        ${ROOT}/bin
+    PATH_DOCKER:     ${ROOT}/docker
+
+    # === Docker vars.
+    DOCKER_BUILDKIT:     1
+    BUILDKIT_PROGRESS:   tty
+    DOCKER_IMAGE_GRADLE: gradle:8.12-jdk21-alpine
+
+import:
+    - scripts/grml.sh
+
+commands:
+    build:
+        help: build iris via docker
+        exec: |
+            dockerBuild

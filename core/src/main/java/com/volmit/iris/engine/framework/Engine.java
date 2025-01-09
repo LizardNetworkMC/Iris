@@ -536,8 +536,8 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
                 continue;
             items.addAll(i.getLoot(debug, rng, slot, world, x, y, z));
         }
-        if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z))
-            return;
+        // if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z))
+        //     return;
 
         if (PaperLib.isPaper() && getWorld().hasRealWorld()) {
             PaperLib.getChunkAtAsync(getWorld().realWorld(), x >> 4, z >> 4).thenAccept((c) -> {

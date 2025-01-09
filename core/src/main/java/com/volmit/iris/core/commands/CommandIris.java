@@ -41,6 +41,7 @@ import com.volmit.iris.util.decree.annotations.Param;
 import com.volmit.iris.util.decree.specialhandlers.NullablePlayerHandler;
 import com.volmit.iris.util.format.C;
 import com.volmit.iris.util.format.Form;
+import com.volmit.iris.util.consts.GitHub;
 import com.volmit.iris.util.plugin.VolmitSender;
 import com.volmit.iris.util.scheduling.J;
 import lombok.Getter;
@@ -405,10 +406,10 @@ public class CommandIris implements DecreeExecutor {
     ) {
         sender().sendMessage(C.GREEN + "Downloading pack: " + pack + "/" + branch + (trim ? " trimmed" : "") + (overwrite ? " overwriting" : ""));
         if (pack.equals("overworld")) {
-            String url = "https://github.com/IrisDimensions/overworld/releases/download/" + Iris.OVERWORLD_TAG + "/overworld.zip";
+            String url = GitHub.getDimensionPackArchiveUrl();
             Iris.service(StudioSVC.class).downloadRelease(sender(), url, trim, overwrite);
         } else {
-            Iris.service(StudioSVC.class).downloadSearch(sender(), "IrisDimensions/" + pack + "/" + branch, trim, overwrite);
+            Iris.service(StudioSVC.class).downloadSearch(sender(), GitHub.getDimensionPackOrganization() + "/" + pack + "/" + branch, trim, overwrite);
         }
     }
 
