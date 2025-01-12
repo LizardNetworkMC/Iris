@@ -24,6 +24,7 @@ import com.volmit.iris.engine.object.annotations.Desc;
 import com.volmit.iris.engine.object.annotations.MinNumber;
 import com.volmit.iris.engine.object.annotations.Required;
 import com.volmit.iris.util.collection.KList;
+import com.volmit.iris.util.conv.IrisLootToVanilla;
 import com.volmit.iris.util.json.JSONObject;
 import com.volmit.iris.util.math.RNG;
 import com.volmit.iris.util.plugin.VolmitSender;
@@ -91,6 +92,14 @@ public class IrisLootTable extends IrisRegistrant {
         }
 
         return lootf;
+    }
+
+    /**
+     * Coverts the iris loot into a vanilla mc loot table.
+     * @return JSON String which can be directl used in the datapack.
+     */
+    private String toVanillaTableLoot() {
+        return new IrisLootToVanilla().toJson(this);
     }
 
     @Override

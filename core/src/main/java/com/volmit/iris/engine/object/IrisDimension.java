@@ -27,6 +27,7 @@ import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.object.annotations.*;
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.collection.KSet;
+import com.volmit.iris.util.conv.IrisLootToVanilla;
 import com.volmit.iris.util.data.DataProvider;
 import com.volmit.iris.util.io.IO;
 import com.volmit.iris.util.json.JSONObject;
@@ -509,6 +510,7 @@ public class IrisDimension extends IrisRegistrant {
         try {
             String serverVersion = Bukkit.getServer().getVersion();
             String[] versions = serverVersion.split("\\.");
+            Iris.info("version: '%s', '%s'", versions[0], versions[1]);
             // TODO: Improve.
             String lootTableName = versions.length < 2
                 ? "loot_tables"
@@ -537,6 +539,7 @@ public class IrisDimension extends IrisRegistrant {
             if (!structure.isDirectory()) {
                 try {
                     Iris.info("Writing vanilla structure loot file from '%s' to '%s'", structurePath, tablePath);
+                    // TODO: IrisLootToVanilla.toJson(null, structureName)
                     IO.writeAll(new File(tablePath), IO.readAll(structure));
                 } catch (IOException ex) {
                     Iris.error("Error writing vanilla structure loot '%s': %s", structureName, ex.toString());
