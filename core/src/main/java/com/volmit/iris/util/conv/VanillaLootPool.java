@@ -1,20 +1,13 @@
 package com.volmit.iris.util.conv;
 
-import com.google.code.gson.Gson;
-import com.google.code.gson.GsonBuilder;
-import com.google.code.gson.FieldNamingPolicy;
-
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.conv.VanillaLootPoolEntry;
+import com.volmit.iris.util.json.JSONArray;
 import com.volmit.iris.util.json.JSONObject;
 
-public record VanillaLootPool(float bonusRoll, KList<VanillaLootPoolEntry> entries, VanillaLootPoolRoll rolls) {
-    public VanillaLootPool(KList<VanillaLootPoolEntry> entries) {
-        this(0f, entries);
-    }
-
-    public VanillaLootPool() {
-        this(0f, new KList<>());
+public record VanillaLootPool(float bonusRoll, KList<VanillaLootPoolEntry> entries, VanillaLootPoolRoll roll) {
+    public VanillaLootPool(KList<VanillaLootPoolEntry> entries, VanillaLootPoolRoll roll) {
+        this(0f, entries, roll);
     }
 
     public JSONObject toJSONObject() {
@@ -25,8 +18,8 @@ public record VanillaLootPool(float bonusRoll, KList<VanillaLootPoolEntry> entri
         for (VanillaLootPoolEntry entry : this.entries) {
             entries.put(entry.toJSONObject());
         }
-        json.put("functions", entries);
-        json.put("rolls", this.rolls());
+        json.put("entries", entries);
+        json.put("rolls", this.roll().toJSONObject());
 
         return json;
     }

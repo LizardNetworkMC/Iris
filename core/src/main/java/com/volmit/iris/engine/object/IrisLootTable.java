@@ -94,14 +94,6 @@ public class IrisLootTable extends IrisRegistrant {
         return lootf;
     }
 
-    /**
-     * Coverts the iris loot into a vanilla mc loot table.
-     * @return JSON String which can be directl used in the datapack.
-     */
-    private String toVanillaTableLoot() {
-        return new IrisLootToVanilla().toJson(this);
-    }
-
     @Override
     public String getFolderName() {
         return "loot";

@@ -1,7 +1,6 @@
 package com.volmit.iris.util.conv;
 
 import com.volmit.iris.util.collection.KList;
-import com.volmit.iris.util.conv.VanillaLootPoolEntry;
 import com.volmit.iris.util.json.JSONObject;
 
 public record VanillaLootPoolRoll(String type, float max, float min) {

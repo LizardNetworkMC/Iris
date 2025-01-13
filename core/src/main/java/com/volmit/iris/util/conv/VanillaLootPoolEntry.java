@@ -1,12 +1,11 @@
 package com.volmit.iris.util.conv;
 
 import com.volmit.iris.util.collection.KList;
-import com.volmit.iris.util.conv.VanillaLootFunction;
 import com.volmit.iris.util.json.JSONArray;
 import com.volmit.iris.util.json.JSONObject;
 
-public record VanillaLootPoolEntry(String type, String name, int weight, KList<VanillaLootFunction> functions) {
-    public VanillaLootPoolEntry(String name, int weight, KList<VanillaLootFunction> functions) {
+public record VanillaLootPoolEntry(String type, String name, int weight, KList<VanillaLootPoolFunction> functions) {
+    public VanillaLootPoolEntry(String name, int weight, KList<VanillaLootPoolFunction> functions) {
         this("minecraft:item", name, weight, functions);
     }
 

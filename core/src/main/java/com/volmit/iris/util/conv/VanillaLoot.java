@@ -2,6 +2,8 @@ package com.volmit.iris.util.conv;
 
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.conv.VanillaLootPool;
+import com.volmit.iris.util.json.JSONArray;
+import com.volmit.iris.util.json.JSONObject;
 
 public record VanillaLoot(String type, String randomSequence, KList<VanillaLootPool> pools) {
     public String toJson() {
@@ -15,6 +17,6 @@ public record VanillaLoot(String type, String randomSequence, KList<VanillaLootP
         json.put("pools", pools);
         json.put("random_sequence", this.randomSequence());
 
-        return json.toString();
+        return json.toString(4);
     }
 }

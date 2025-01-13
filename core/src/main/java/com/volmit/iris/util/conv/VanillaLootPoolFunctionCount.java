@@ -1,6 +1,6 @@
 package com.volmit.iris.util.conv;
 
-import com.google.code.gson.Gson;
+import com.volmit.iris.util.json.JSONObject;
 
 public record VanillaLootPoolFunctionCount(String type, float max, float min) {
     public VanillaLootPoolFunctionCount(float max, float min) {

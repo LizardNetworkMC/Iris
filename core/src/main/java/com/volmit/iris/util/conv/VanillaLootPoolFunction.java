@@ -1,7 +1,5 @@
 package com.volmit.iris.util.conv;
 
-import com.google.code.gson.Gson;
-import com.volmit.iris.util.conv.VanillaLootFunctionCount;
 import com.volmit.iris.util.json.JSONObject;
 
 public class VanillaLootPoolFunction {
@@ -27,13 +25,13 @@ public class VanillaLootPoolFunction {
     }
 
     public VanillaLootPoolFunction setCount(VanillaLootPoolFunctionCount count) {
-        this.function = "set_count";
+        this.function = "minecraft:set_count";
         this.count = count;
         return this;
     }
 
     public VanillaLootPoolFunction setDamage(VanillaLootPoolFunctionDamage damage) {
-        this.function = "set_damage";
+        this.function = "minecraft:set_damage";
         this.damage = damage;
         return this;
     }
@@ -49,9 +47,9 @@ public class VanillaLootPoolFunction {
         json.put("function", this.function);
 
         if (this.count != null) {
-            json.put("count", this.count);
+            json.put("count", this.count.toJSONObject());
         } else if (this.damage != null) {
-            json.put("damage", this.damage);
+            json.put("damage", this.damage.toJSONObject());
         } else if (this.enchant != null) {
             json.put("function", this.enchant.function());
             json.put("options", this.enchant.options());

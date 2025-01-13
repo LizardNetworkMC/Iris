@@ -1,5 +1,6 @@
 package com.volmit.iris.util.conv;
 
+import com.volmit.iris.engine.object.IrisEnchantment;
 import com.volmit.iris.engine.object.IrisLoot;
 import com.volmit.iris.engine.object.IrisLootTable;
 import com.volmit.iris.util.collection.KList;
@@ -15,11 +16,13 @@ public class IrisLootToVanilla {
         for (IrisLoot loot : irisLoot) {
             maxRarity = Math.max(maxRarity, loot.getRarity());
         }
+        // Weight needs to be at least 1.
+        maxRarity++;
 
         for (IrisLoot loot : irisLoot) {
-            String name = loot.getType();
+            String name = loot.getType().toString().toLowerCase();
             if (!name.contains(":")) {
-                name = ":minecraft" + name;
+                name = "minecraft:" + name;
             }
 
             KList<VanillaLootPoolFunction> funcs = new KList<>();
@@ -32,18 +35,28 @@ public class IrisLootToVanilla {
                     loot.getMaxAmount()
                 )
             ));
-            funcs.add(funcBaseDamage.setDamage(
-                new VanillaLootPoolFunctionDamage(
-                    1-loot.getMaxDurability(),
-                    1-loot.getMinDurability()
-                )
-            ));
-            funcs.add(funcBaseEnchant.setEnchant(
-                new VanillaLootPoolFunctionEnchant(
-                    "minecraft:enchant_randomly",
-                    "#minecraft:on_random_loot"
-                )
-            ));
+
+            double durMax = loot.getMaxDurability();
+            double durMin = loot.getMinDurability();
+            if (Double.compare(durMax, 1) != 0 || Double.compare(durMin, 0) != 0) {
+                funcs.add(funcBaseDamage.setDamage(
+                    new VanillaLootPoolFunctionDamage(
+                        1d-loot.getMaxDurability(),
+                        1d-loot.getMinDurability()
+                    )
+                ));
+            }
+
+            KList<IrisEnchantment> irisEnchantments = loot.getEnchantments();
+            if (irisEnchantments.size() > 0) {
+                funcs.add(funcBaseEnchant.setEnchant(
+                    new VanillaLootPoolFunctionEnchant(
+                        "minecraft:enchant_randomly",
+                        "#minecraft:on_random_loot",
+                        irisEnchantments
+                    )
+                ));
+            }
             entries.add(new VanillaLootPoolEntry(
                 name,
                 maxRarity-loot.getRarity(),
@@ -54,8 +67,9 @@ public class IrisLootToVanilla {
         JSONObject json = new JSONObject();
         String lootType = "minecraft:chest";
         KList<VanillaLootPool> pools = new KList<>();
-        pools.add(new VanillaLootPool(entries));
-        VanillaLoot vanillaLoot = new VanillaLoot(lootType, String.format("%s/%s", lootType, fileName), pools);
+        VanillaLootPoolRoll roll = new VanillaLootPoolRoll(table.getMaxPicked(), table.getMinPicked());
+        pools.add(new VanillaLootPool(entries, roll));
+        VanillaLoot vanillaLoot = new VanillaLoot(lootType, String.format("%ss/%s", lootType, fileName), pools);
 
         return vanillaLoot.toJson();
     }

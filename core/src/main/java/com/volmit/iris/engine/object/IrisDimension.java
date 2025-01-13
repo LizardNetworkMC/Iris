@@ -522,7 +522,8 @@ public class IrisDimension extends IrisRegistrant {
         }
 
         // Only copy structures...
-        File irisLootStructures = new File(pack.getPath() + "/loot/structures");
+        String lootStructurePath = "loot/structures";
+        File irisLootStructures = new File(pack.getPath() + "/" + lootStructurePath);
         if (!irisLootStructures.isDirectory()) {
             Iris.error("structure path '%s' is not a directory", irisLootStructures.getName());
             return changed;
@@ -539,8 +540,9 @@ public class IrisDimension extends IrisRegistrant {
             if (!structure.isDirectory()) {
                 try {
                     Iris.info("Writing vanilla structure loot file from '%s' to '%s'", structurePath, tablePath);
-                    // TODO: IrisLootToVanilla.toJson(null, structureName)
-                    IO.writeAll(new File(tablePath), IO.readAll(structure));
+                    IrisLootTable irisLoot = data.getData().getGson()
+                        .fromJson(new JSONObject(IO.readAll(structure)).toString(0), IrisLootTable.class);
+                    IO.writeAll(new File(tablePath), IrisLootToVanilla.toJson(irisLoot, structureName));
                 } catch (IOException ex) {
                     Iris.error("Error writing vanilla structure loot '%s': %s", structureName, ex.toString());
                     return changed;
@@ -561,7 +563,10 @@ public class IrisDimension extends IrisRegistrant {
                 }
 
                 try {
-                    IO.writeAll(new File(destPath, entry), IO.readAll(entryFile));
+                    Iris.info("Writing vanilla structure loot file from '%s' to '%s'", structurePath + "/" + entry, destPath + "/" + entry);
+                    IrisLootTable irisLoot = data.getData().getGson()
+                        .fromJson(new JSONObject(IO.readAll(entryFile)).toString(0), IrisLootTable.class);
+                    IO.writeAll(new File(destPath, entry), IrisLootToVanilla.toJson(irisLoot, structureName + "/" + entry.split("\\Q.\\E")[0]));
                 } catch (IOException ex) {
                     Iris.error("Error writing structure loot '%s': %s", structureName, ex.toString());
                     return changed;
