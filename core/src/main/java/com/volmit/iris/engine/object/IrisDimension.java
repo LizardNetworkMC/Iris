@@ -40,7 +40,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World.Environment;
 import org.bukkit.block.data.BlockData;
@@ -505,23 +504,8 @@ public class IrisDimension extends IrisRegistrant {
             e.printStackTrace();
         }
 
-        // Write the loot tables.
-        String lootTableDirName = "loot_tables";
-        try {
-            String serverVersion = Bukkit.getServer().getVersion();
-            String[] versions = serverVersion.split("\\.");
-            Iris.info("version: '%s', '%s'", versions[0], versions[1]);
-            // TODO: Improve.
-            String lootTableName = versions.length < 2
-                ? "loot_tables"
-                : (versions[0] == "1" && Integer.decode(versions[1]) >= 21)
-                    ? "loot_table"
-                    : "loot_tables";
-        } catch (NumberFormatException ex) {
-            Iris.warn("Unable to decode server version, using loot table dir fallback");
-        }
-
-        // Only copy structures...
+        // Write the loot tables (only structures).
+        String lootTableDirName = IrisLootToVanilla.lootDirectoryName();
         String lootStructurePath = "loot/structures";
         File irisLootStructures = new File(pack.getPath() + "/" + lootStructurePath);
         if (!irisLootStructures.isDirectory()) {
