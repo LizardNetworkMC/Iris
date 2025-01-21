@@ -231,42 +231,60 @@ public class IrisObjectPlacement {
         });
     }
 
+    public String[] getVanillaLootTableName() {
+        KList<String> names = new KList<>();
+        KList<IrisObjectVanillaLoot> vanillaLoot = getVanillaLoot();
+        for (IObjectLoot loot : vanillaLoot) {
+            if (loot != null) {
+                names.add(loot.getName());
+            }
+        }
+
+        return names.toArray(new String[names.size()]);
+    }
+
     private TableCache getCache(IrisData manager, KList<? extends IObjectLoot> list, Function<String, IrisLootTable> loader) {
         TableCache tc = new TableCache();
 
         for (IObjectLoot loot : list) {
-            if (loot == null)
+            if (loot == null) {
                 continue;
+            }
+
+
             IrisLootTable table = loader.apply(loot.getName());
             if (table == null) {
                 Iris.warn("Couldn't find loot table " + loot.getName());
                 continue;
             }
 
-            if (loot.getFilter().isEmpty()) //Table applies to all containers
-            {
+            if (loot.getFilter().isEmpty()) {
+                // Table applies to all containers
                 tc.global.put(table, loot.getWeight());
-            } else if (!loot.isExact()) //Table is meant to be by type
-            {
+            } else if (!loot.isExact()) {
+                // Table is meant to be by type
                 for (BlockData filterData : loot.getFilter(manager)) {
-                    if (!tc.basic.containsKey(filterData.getMaterial())) {
-                        tc.basic.put(filterData.getMaterial(), new WeightedRandom<>());
+                    Material material = filterData.getMaterial();
+                    if (!tc.basic.containsKey(material)) {
+                        tc.basic.put(material, new WeightedRandom<>());
                     }
 
-                    tc.basic.get(filterData.getMaterial()).put(table, loot.getWeight());
+                    tc.basic.get(material).put(table, loot.getWeight());
                 }
-            } else //Filter is exact
-            {
+            } else {
+                // Filter is exact
                 for (BlockData filterData : loot.getFilter(manager)) {
-                    if (!tc.exact.containsKey(filterData.getMaterial())) {
-                        tc.exact.put(filterData.getMaterial(), new KMap<>());
+                    Material material = filterData.getMaterial();
+                    if (!tc.exact.containsKey(material)) {
+                        tc.exact.put(material, new KMap<>());
                     }
 
-                    if (!tc.exact.get(filterData.getMaterial()).containsKey(filterData)) {
-                        tc.exact.get(filterData.getMaterial()).put(filterData, new WeightedRandom<>());
+                    KMap<BlockData, WeightedRandom<IrisLootTable>> data = tc.exact.get(material);
+                    if (!data.containsKey(filterData)) {
+                        data.put(filterData, new WeightedRandom<>());
                     }
 
-                    tc.exact.get(filterData.getMaterial()).get(filterData).put(table, loot.getWeight());
+                    data.get(filterData).put(table, loot.getWeight());
                 }
             }
         }
@@ -289,21 +307,22 @@ public class IrisObjectPlacement {
      * @return The loot table it should use.
      */
     public IrisLootTable getTable(BlockData data, IrisData dataManager) {
-        TableCache cache = getCache(dataManager);
-        if (B.isStorageChest(data)) {
-            IrisLootTable picked = null;
-            if (cache.exact.containsKey(data.getMaterial()) && cache.exact.get(data.getMaterial()).containsKey(data)) {
-                picked = cache.exact.get(data.getMaterial()).get(data).pullRandom();
-            } else if (cache.basic.containsKey(data.getMaterial())) {
-                picked = cache.basic.get(data.getMaterial()).pullRandom();
-            } else if (cache.global.getSize() > 0) {
-                picked = cache.global.pullRandom();
-            }
-
-            return picked;
+        if (!B.isStorageChest(data)) {
+            return null;
         }
 
-        return null;
+        TableCache cache = getCache(dataManager);
+        IrisLootTable picked = null;
+        Material material = data.getMaterial();
+        if (cache.exact.containsKey(material) && cache.exact.get(material).containsKey(data)) {
+            picked = cache.exact.get(material).get(data).pullRandom();
+        } else if (cache.basic.containsKey(material)) {
+            picked = cache.basic.get(material).pullRandom();
+        } else if (cache.global.getSize() > 0) {
+            picked = cache.global.pullRandom();
+        }
+
+        return picked;
     }
 
     private static class TableCache {

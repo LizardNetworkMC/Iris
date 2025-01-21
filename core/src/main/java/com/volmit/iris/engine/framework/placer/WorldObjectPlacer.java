@@ -12,6 +12,7 @@ import com.volmit.iris.engine.object.InventorySlotType;
 import com.volmit.iris.engine.object.IrisLootTable;
 import com.volmit.iris.engine.object.TileData;
 import com.volmit.iris.util.collection.KList;
+import com.volmit.iris.util.conv.VanillaLoot;
 import com.volmit.iris.util.data.B;
 import com.volmit.iris.util.math.RNG;
 import lombok.EqualsAndHashCode;
@@ -51,34 +52,56 @@ public class WorldObjectPlacer implements IObjectPlacer {
     @Override
     public void set(int x, int y, int z, BlockData d) {
         Block block = world.getBlockAt(x, y + world.getMinHeight(), z);
+        if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) {
+            return;
+        }
+        // block.setBlockData(d);
 
-        if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) return;
-        InventorySlotType slot = null;
-        if (B.isStorageChest(d)) {
-            slot = InventorySlotType.STORAGE;
+        InventorySlotType slot = InventorySlotType.STORAGE;
+        if (!B.isStorageChest(d)) {
+            return;
         }
 
-        if (slot != null) {
-            RNG rx = new RNG(Cache.key(x, z));
-            KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+        // RNG rx = new RNG(Cache.key(x, z));
+        // KList<IrisLootTable> tables = engine.getLootTables(rx, block);
 
-            try {
-                Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
+        // try {
+        //     Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
 
-                if (!tables.isEmpty()){
-                    Iris.debug("IrisLootEvent has been accessed");
-                }
+        //     if (!tables.isEmpty()){
+        //         Iris.debug("IrisLootEvent has been accessed");
+        //     }
 
-                if (tables.isEmpty())
-                    return;
-                InventoryHolder m = (InventoryHolder) block.getState();
-                engine.addItems(false, m.getInventory(), rx, tables, slot, world, x, y, z, 15);
-            } catch (Throwable e) {
-                Iris.reportError(e);
-            }
-        }
+        //     if (tables.isEmpty())
+        //         return;
+        //     InventoryHolder m = (InventoryHolder) block;
+        //     engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
+        // } catch (Throwable e) {
+        //     Iris.reportError(e);
+        // }
 
-        block.setBlockData(d);
+
+        // if (slot != null) {
+        //     RNG rx = new RNG(Cache.key(x, z));
+        //     KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+
+        //     try {
+        //         Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
+
+        //         if (!tables.isEmpty()){
+        //             Iris.debug("IrisLootEvent has been accessed");
+        //         }
+
+        //         if (tables.isEmpty())
+        //             return;
+        //         InventoryHolder m = (InventoryHolder) block;
+        //         engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
+        //     } catch (Throwable e) {
+        //         Iris.reportError(e);
+        //     }
+        // }
+
+        // block.setBlockData(d);
     }
 
     @Override

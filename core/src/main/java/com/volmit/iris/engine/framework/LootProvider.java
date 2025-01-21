@@ -34,5 +34,5 @@ public interface LootProvider {
 
     KList<IrisLootTable> getLootTables(RNG rng, Block b);
 
-    void addItems(boolean debug, Inventory inv, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf);
+    void addItems(boolean debug, Inventory inv, Block block, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf);
 }

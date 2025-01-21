@@ -206,6 +206,7 @@ public class IrisSettings {
         public String defaultWorldType = "overworld";
         public int maxBiomeChildDepth = 4;
         public boolean preventLeafDecay = true;
+        public boolean useVanillaStructureLootSystem = false;
     }
 
     @Data
