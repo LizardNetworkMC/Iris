@@ -4,7 +4,7 @@ import com.volmit.iris.util.json.JSONObject;
 
 public class VanillaLootPoolFunction {
     private final boolean add;
-    
+
     private String function = "";
     private VanillaLootPoolFunctionCount count;
     private VanillaLootPoolFunctionDamage damage;
@@ -14,7 +14,7 @@ public class VanillaLootPoolFunction {
         this.function = function;
         this.add = add;
     }
-    
+
     public VanillaLootPoolFunction(String function) {
         this.function = function;
         this.add = false;

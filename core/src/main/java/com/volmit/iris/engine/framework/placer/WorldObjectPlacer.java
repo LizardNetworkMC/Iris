@@ -55,53 +55,31 @@ public class WorldObjectPlacer implements IObjectPlacer {
         if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) {
             return;
         }
-        // block.setBlockData(d);
+        block.setBlockData(d);
 
         InventorySlotType slot = InventorySlotType.STORAGE;
         if (!B.isStorageChest(d)) {
             return;
         }
 
-        // RNG rx = new RNG(Cache.key(x, z));
-        // KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+        RNG rx = new RNG(Cache.key(x, z));
+        KList<IrisLootTable> tables = engine.getLootTables(rx, block);
 
-        // try {
-        //     Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
+        try {
+            Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
 
-        //     if (!tables.isEmpty()){
-        //         Iris.debug("IrisLootEvent has been accessed");
-        //     }
+            if (!tables.isEmpty()){
+                Iris.debug("IrisLootEvent has been accessed");
+            }
 
-        //     if (tables.isEmpty())
-        //         return;
-        //     InventoryHolder m = (InventoryHolder) block;
-        //     engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
-        // } catch (Throwable e) {
-        //     Iris.reportError(e);
-        // }
-
-
-        // if (slot != null) {
-        //     RNG rx = new RNG(Cache.key(x, z));
-        //     KList<IrisLootTable> tables = engine.getLootTables(rx, block);
-
-        //     try {
-        //         Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
-
-        //         if (!tables.isEmpty()){
-        //             Iris.debug("IrisLootEvent has been accessed");
-        //         }
-
-        //         if (tables.isEmpty())
-        //             return;
-        //         InventoryHolder m = (InventoryHolder) block;
-        //         engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
-        //     } catch (Throwable e) {
-        //         Iris.reportError(e);
-        //     }
-        // }
-
-        // block.setBlockData(d);
+            if (tables.isEmpty()) {
+                return;
+            }
+            InventoryHolder m = (InventoryHolder) block;
+            engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
+        } catch (Throwable e) {
+            Iris.reportError(e);
+        }
     }
 
     @Override

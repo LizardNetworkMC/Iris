@@ -90,6 +90,18 @@ public class ServerConfigurator {
         }
         KList<File> worlds = new KList<>();
         Bukkit.getServer().getWorlds().forEach(w -> worlds.add(new File(w.getWorldFolder(), "datapacks")));
+
+        // Add iris worlds to the list as well.
+        File irisDir = new File("iris/");
+        try {
+            String[] studioWorlds = irisDir.list();
+            for (String worldName : studioWorlds) {
+                worlds.add(new File(irisDir, worldName + "/datapacks"));
+            }
+        } catch (SecurityException ex) {
+            Iris.debug("iris studio directory does not exist, skipping datapack folders.");
+        }
+
         return worlds;
     }
 

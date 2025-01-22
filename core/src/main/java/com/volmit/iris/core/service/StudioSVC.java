@@ -339,6 +339,7 @@ public class StudioSVC implements IrisService {
     public void open(VolmitSender sender, long seed, String dimm) {
         try {
             open(sender, seed, dimm, (w) -> {
+                ServerConfigurator.installDataPacks(false);
             });
         } catch (Exception e) {
             Iris.reportError(e);

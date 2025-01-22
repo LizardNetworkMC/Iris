@@ -22,7 +22,7 @@ public record VanillaLootPoolEntry(String type, String name, int weight, KList<V
         json.put("type", this.type());
         json.put("name", this.name());
         json.put("weight", this.weight());
-        
+
         JSONArray funcs = new JSONArray();
         for (VanillaLootPoolFunction func : this.functions) {
             funcs.put(func.toJSONObject());

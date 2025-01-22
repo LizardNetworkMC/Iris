@@ -3,6 +3,7 @@ package com.volmit.iris.util.conv;
 import java.util.Random;
 
 import com.volmit.iris.Iris;
+import com.volmit.iris.engine.framework.PlacedObject;
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.conv.VanillaLootPool;
 import com.volmit.iris.util.json.JSONArray;
@@ -31,15 +32,25 @@ public record VanillaLoot(String type, String randomSequence, KList<VanillaLootP
         return json.toString(4);
     }
 
-    public static void setVanillaLoot(NamespacedKey lootTableKey, Location loc) {
+    public static boolean setVanillaLootTable(Block originBlock, PlacedObject placed) {
+        if (placed == null || placed.getPlacement() == null) {
+            return false;
+        }
+
+        String[] tableNames = placed.getPlacement().getVanillaLootTableName();
+        for (String name : tableNames) {
+            NamespacedKey key = NamespacedKey.fromString(name);
+            setLootTable(key, originBlock.getLocation());
+        }
+
+        return true;
+    }
+
+    private static void setLootTable(NamespacedKey lootTableKey, Location loc) {
         Block blk = loc.getBlock();
         if (!(blk.getState() instanceof Lootable)) {
             return;
         }
-
-        // debug only
-        // Lootable a = (Lootable) blk.getState();
-        Iris.info("x=%s, y=%s, z=%s", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         // Get the loot table by its name and set the block data accordingly.
         LootTable lootTable = Bukkit.getLootTable(lootTableKey);

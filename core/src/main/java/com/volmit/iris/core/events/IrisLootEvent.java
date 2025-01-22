@@ -80,34 +80,34 @@ public class IrisLootEvent extends Event {
         return handlers;
     }
 
-    // /**
-    //  * Triggers the corresponding Bukkit loot event.
-    //  * This method integrates your custom IrisLootTables with Bukkit's LootGenerateEvent,
-    //  * allowing other plugins to modify or cancel the loot generation.
-    //  *
-    //  * @return true when the event was canceled
-    //  */
-    // public static boolean callLootEvent(KList<ItemStack> loot, Inventory inv, World world, int x, int y, int z) {
-    //     InventoryHolder holder = inv.getHolder();
-    //     Location loc = new Location(world, x, y, z);
-    //     if (holder == null) {
-    //         holder = new InventoryHolder() {
-    //             @NotNull
-    //             @Override
-    //             public Inventory getInventory() {
-    //                 return inv;
-    //             }
-    //         };
-    //     }
+    /**
+     * Triggers the corresponding Bukkit loot event.
+     * This method integrates your custom IrisLootTables with Bukkit's LootGenerateEvent,
+     * allowing other plugins to modify or cancel the loot generation.
+     *
+     * @return true when the event was canceled
+     */
+    public static boolean callLootEvent(KList<ItemStack> loot, Inventory inv, World world, int x, int y, int z) {
+        InventoryHolder holder = inv.getHolder();
+        Location loc = new Location(world, x, y, z);
+        if (holder == null) {
+            holder = new InventoryHolder() {
+                @NotNull
+                @Override
+                public Inventory getInventory() {
+                    return inv;
+                }
+            };
+        }
 
-    //     LootContext context = new LootContext.Builder(loc).build();
-    //     LootGenerateEvent event = new LootGenerateEvent(world, null, holder, EMPTY, context, loot, true);
-    //     if (!Bukkit.isPrimaryThread()) {
-    //         Iris.warn("LootGenerateEvent was not called on the main thread, please report this issue.");
-    //         Thread.dumpStack();
-    //         J.sfut(() -> Bukkit.getPluginManager().callEvent(event)).join();
-    //     } else Bukkit.getPluginManager().callEvent(event);
+        LootContext context = new LootContext.Builder(loc).build();
+        LootGenerateEvent event = new LootGenerateEvent(world, null, holder, EMPTY, context, loot, true);
+        if (!Bukkit.isPrimaryThread()) {
+            Iris.warn("LootGenerateEvent was not called on the main thread, please report this issue.");
+            Thread.dumpStack();
+            J.sfut(() -> Bukkit.getPluginManager().callEvent(event)).join();
+        } else Bukkit.getPluginManager().callEvent(event);
 
-    //     return event.isCancelled();
-    // }
+        return event.isCancelled();
+    }
 }

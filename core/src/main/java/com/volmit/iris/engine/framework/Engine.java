@@ -427,18 +427,12 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
         KList<IrisLootTable> tables = getLootTables(rx, block);
         try {
             if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
-                // TODO: We need to find the type of structure (village - fisherman, ...)
                 int blockY = block.getY() - getWorld().minHeight();
                 PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-                if (po != null && po.getPlacement() != null) {
-                    String[] tableNames = po.getPlacement().getVanillaLootTableName();
-                    for (String name : tableNames) {
-                        NamespacedKey key = NamespacedKey.fromString(name);
-                        VanillaLoot.setVanillaLoot(key, loc);
-                    }
+                if (VanillaLoot.setVanillaLootTable(block, po)) {
+                    return;
                 }
-
-                return;
+                Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
             }
 
             Bukkit.getPluginManager().callEvent(new IrisLootEvent(this, block, slot, tables));
@@ -560,39 +554,49 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
 
     @Override
     default void addItems(boolean debug, Inventory inv, Block block, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf) {
-        KList<ItemStack> items = new KList<>();
+        if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+            int blockY = block.getY() - getWorld().minHeight();
+            PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
+            if (VanillaLoot.setVanillaLootTable(block, po)) {
+                return;
+            }
 
-        for (IrisLootTable i : tables) {
-            if (i == null)
-                continue;
-            items.addAll(i.getLoot(debug, rng, slot, world, x, y, z));
+            Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
         }
-        // if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z))
-        //     return;
 
-        // if (PaperLib.isPaper() && getWorld().hasRealWorld()) {
-        //     PaperLib.getChunkAtAsync(getWorld().realWorld(), x >> 4, z >> 4).thenAccept((c) -> {
-        //         Runnable r = () -> {
-        //             for (ItemStack i : items) {
-        //                 inv.addItem(i);
-        //             }
+        KList<ItemStack> items = new KList<>();
+        for (IrisLootTable i : tables) {
+            if (i != null) {
+                items.addAll(i.getLoot(debug, rng, slot, world, x, y, z));
+            }
+        }
+        if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z)) {
+            return;
+        }
 
-        //             scramble(inv, rng);
-        //         };
+        if (PaperLib.isPaper() && getWorld().hasRealWorld()) {
+            PaperLib.getChunkAtAsync(getWorld().realWorld(), x >> 4, z >> 4).thenAccept((c) -> {
+                Runnable r = () -> {
+                    for (ItemStack i : items) {
+                        inv.addItem(i);
+                    }
 
-        //         if (Bukkit.isPrimaryThread()) {
-        //             r.run();
-        //         } else {
-        //             J.s(r);
-        //         }
-        //     });
-        // } else {
-        //     for (ItemStack i : items) {
-        //         inv.addItem(i);
-        //     }
+                    scramble(inv, rng);
+                };
 
-        //     scramble(inv, rng);
-        // }
+                if (Bukkit.isPrimaryThread()) {
+                    r.run();
+                } else {
+                    J.s(r);
+                }
+            });
+        } else {
+            for (ItemStack i : items) {
+                inv.addItem(i);
+            }
+
+            scramble(inv, rng);
+        }
     }
 
     EngineEffects getEffects();

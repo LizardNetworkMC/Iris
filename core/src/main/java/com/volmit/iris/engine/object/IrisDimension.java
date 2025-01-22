@@ -523,7 +523,7 @@ public class IrisDimension extends IrisRegistrant {
             String tablePath = lootTableChestDir + structureName;
             if (!structure.isDirectory()) {
                 try {
-                    Iris.info("Writing vanilla structure loot file from '%s' to '%s'", structurePath, tablePath);
+                    Iris.debug(String.format("Writing vanilla structure loot file from '%s' to '%s'", structurePath, tablePath));
                     IrisLootTable irisLoot = data.getData().getGson()
                         .fromJson(new JSONObject(IO.readAll(structure)).toString(0), IrisLootTable.class);
                     IO.writeAll(new File(tablePath), IrisLootToVanilla.toJson(irisLoot, structureName));
@@ -547,7 +547,7 @@ public class IrisDimension extends IrisRegistrant {
                 }
 
                 try {
-                    Iris.info("Writing vanilla structure loot file from '%s' to '%s'", structurePath + "/" + entry, destPath + "/" + entry);
+                    Iris.debug(String.format("Writing vanilla structure loot file from '%s' to '%s'", structurePath + "/" + entry, destPath + "/" + entry));
                     IrisLootTable irisLoot = data.getData().getGson()
                         .fromJson(new JSONObject(IO.readAll(entryFile)).toString(0), IrisLootTable.class);
                     IO.writeAll(new File(destPath, entry), IrisLootToVanilla.toJson(irisLoot, structureName + "/" + entry.split("\\Q.\\E")[0]));
