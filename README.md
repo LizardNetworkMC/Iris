@@ -1,3 +1,8 @@
+<!--
+  Changes (YYYY-MM-DD):
+    - 2025-01-23 @xIRoXaSx: Modified GitHub url.
+-->
+
 # Iris
 
 The master branch is for the latest version of minecraft.

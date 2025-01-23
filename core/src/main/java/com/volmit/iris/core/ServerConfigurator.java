@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added Iris studio worlds to the list of worlds to install datapacks into.
+ *                          Refactored methods to minimze nesting.
  */
 
 package com.volmit.iris.core;
@@ -91,7 +96,7 @@ public class ServerConfigurator {
         KList<File> worlds = new KList<>();
         Bukkit.getServer().getWorlds().forEach(w -> worlds.add(new File(w.getWorldFolder(), "datapacks")));
 
-        // Add iris worlds to the list as well.
+        // Add iris studio worlds to the list as well.
         File irisDir = new File("iris/");
         try {
             String[] studioWorlds = irisDir.list();
@@ -99,7 +104,7 @@ public class ServerConfigurator {
                 worlds.add(new File(irisDir, worldName + "/datapacks"));
             }
         } catch (SecurityException ex) {
-            Iris.debug("iris studio directory does not exist, skipping datapack folders.");
+            Iris.debug("unable to read iris studio directory, skipping datapack folders.");
         }
 
         return worlds;
@@ -170,16 +175,19 @@ public class ServerConfigurator {
             }
 
             for (File dimFile : dims.listFiles()) {
-                if (dimFile.getName().endsWith(".json")) {
-                    IrisDimension dim = data.getDimensionLoader().load(dimFile.getName().split("\\Q.\\E")[0]);
-                    if (dim == null) {
-                        continue;
-                    }
+                if (!dimFile.getName().endsWith(".json")) {
+                    continue;
+                }
 
-                    Iris.verbose("  Checking Dimension " + dim.getLoadFile().getPath());
-                    for (File dpack : getDatapacksFolder()) {
-                        dim.installDataPack(pack, fixer, () -> data, dpack, ultimateMaxHeight, ultimateMinHeight);
-                    }
+                IrisDimension dim = data.getDimensionLoader().load(dimFile.getName().split("\\Q.\\E")[0]);
+                if (dim == null) {
+                    continue;
+                }
+
+                Iris.verbose("  Checking Dimension " + dim.getLoadFile().getPath());
+                List<File> datapacks = getDatapacksFolder();
+                for (File dpack : datapacks) {
+                    dim.installDataPack(pack, fixer, () -> data, dpack, ultimateMaxHeight, ultimateMinHeight);
                 }
             }
         }

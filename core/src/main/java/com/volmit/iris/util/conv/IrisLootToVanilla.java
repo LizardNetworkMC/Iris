@@ -1,3 +1,24 @@
+/*
+ * Iris is a World Generator for Minecraft Bukkit Servers
+ * Copyright (c) 2025 xIRoXaSx
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added file.
+ */
+
 package com.volmit.iris.util.conv;
 
 import com.volmit.iris.Iris;
@@ -5,7 +26,6 @@ import com.volmit.iris.engine.object.IrisEnchantment;
 import com.volmit.iris.engine.object.IrisLoot;
 import com.volmit.iris.engine.object.IrisLootTable;
 import com.volmit.iris.util.collection.KList;
-import com.volmit.iris.util.json.JSONArray;
 import com.volmit.iris.util.json.JSONObject;
 
 import org.bukkit.Bukkit;
@@ -48,8 +68,6 @@ public class IrisLootToVanilla {
 
             KList<VanillaLootPoolFunction> funcs = new KList<>();
             VanillaLootPoolFunction funcBaseCount = new VanillaLootPoolFunction();
-            VanillaLootPoolFunction funcBaseDamage = new VanillaLootPoolFunction();
-            VanillaLootPoolFunction funcBaseEnchant = new VanillaLootPoolFunction();
             funcs.add(funcBaseCount.setCount(
                 new VanillaLootPoolFunctionCount(
                     loot.getMinAmount(),
@@ -60,6 +78,7 @@ public class IrisLootToVanilla {
             double durMax = loot.getMaxDurability();
             double durMin = loot.getMinDurability();
             if (Double.compare(durMax, 1) != 0 || Double.compare(durMin, 0) != 0) {
+                VanillaLootPoolFunction funcBaseDamage = new VanillaLootPoolFunction();
                 funcs.add(funcBaseDamage.setDamage(
                     new VanillaLootPoolFunctionDamage(
                         1d-loot.getMaxDurability(),
@@ -70,6 +89,7 @@ public class IrisLootToVanilla {
 
             KList<IrisEnchantment> irisEnchantments = loot.getEnchantments();
             if (irisEnchantments.size() > 0) {
+                VanillaLootPoolFunction funcBaseEnchant = new VanillaLootPoolFunction();
                 funcs.add(funcBaseEnchant.setEnchant(
                     new VanillaLootPoolFunctionEnchant(
                         "minecraft:enchant_randomly",
@@ -90,7 +110,12 @@ public class IrisLootToVanilla {
         KList<VanillaLootPool> pools = new KList<>();
         VanillaLootPoolRoll roll = new VanillaLootPoolRoll(table.getMaxPicked(), table.getMinPicked());
         pools.add(new VanillaLootPool(entries, roll));
-        VanillaLoot vanillaLoot = new VanillaLoot(lootType, String.format("%ss/%s", lootType, fileName), pools);
+
+        VanillaLoot vanillaLoot = new VanillaLoot(
+            lootType,
+            String.format("%ss/%s", lootType, fileName),
+            pools
+        );
 
         return vanillaLoot.toJson();
     }

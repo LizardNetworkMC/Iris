@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added method to get vanilla loot table names.
+ *                          Refactored methods to minimize nesting.
  */
 
 package com.volmit.iris.engine.object;
@@ -250,7 +255,6 @@ public class IrisObjectPlacement {
             if (loot == null) {
                 continue;
             }
-
 
             IrisLootTable table = loader.apply(loot.getName());
             if (table == null) {

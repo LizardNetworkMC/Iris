@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
  */
 
 package com.volmit.iris.engine.framework;
@@ -70,25 +74,16 @@ import io.papermc.lib.PaperLib;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
-import org.bukkit.block.Barrel;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.generator.structure.Structure;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.loot.Lootable;
-import org.bukkit.loot.LootTable;
-import org.bukkit.NamespacedKey;
 
 import java.awt.Color;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
@@ -405,7 +400,6 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
 
     @BlockCoordinates
     @Override
-
     default void update(int x, int y, int z, Chunk c, RNG rf) {
         Block block = c.getBlock(x, y, z);
         World world = block.getWorld();

@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added funtionality to serialize vanilla structure loot tables.
  */
 
 package com.volmit.iris.engine.object;
@@ -26,7 +30,6 @@ import com.volmit.iris.core.nms.datapack.IDataFixer;
 import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.object.annotations.*;
 import com.volmit.iris.util.collection.KList;
-import com.volmit.iris.util.collection.KSet;
 import com.volmit.iris.util.conv.IrisLootToVanilla;
 import com.volmit.iris.util.data.DataProvider;
 import com.volmit.iris.util.io.IO;
@@ -46,7 +49,6 @@ import org.bukkit.block.data.BlockData;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 @Accessors(chain = true)
 @AllArgsConstructor
@@ -505,38 +507,62 @@ public class IrisDimension extends IrisRegistrant {
         }
 
         // Write the loot tables (only structures).
+        copyVanillaStructureLootTables(pack, datapacks, data);
+        return changed;
+    }
+
+    private void copyVanillaStructureLootTables(File pack, File datapacks, DataProvider dataProvider) {
+        String dataPath = "iris/data/";
+        boolean changed = false;
+
+        // Write the loot tables (only structures).
         String lootTableDirName = IrisLootToVanilla.lootDirectoryName();
         String lootStructurePath = "loot/structures";
         File irisLootStructures = new File(pack.getPath() + "/" + lootStructurePath);
         if (!irisLootStructures.isDirectory()) {
             Iris.error("structure path '%s' is not a directory", irisLootStructures.getName());
-            return changed;
+            return;
         }
 
         String structureRootDir = irisLootStructures.getPath();
         String[] structureNames = irisLootStructures.list();
         String lootTableChestDir = datapacks.getPath() + "/" + dataPath + getLoadKey().toLowerCase() + "/" + lootTableDirName + "/chests/" ;
-        new File(lootTableChestDir).mkdirs();
+        try {
+            new File(lootTableChestDir).mkdirs();
+        } catch (SecurityException ex) {
+            Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+            return;
+        }
+
         for (String structureName : structureNames) {
             String structurePath = structureRootDir + "/" + structureName;
             File structure = new File(structurePath);
             String tablePath = lootTableChestDir + structureName;
             if (!structure.isDirectory()) {
                 try {
-                    Iris.debug(String.format("Writing vanilla structure loot file from '%s' to '%s'", structurePath, tablePath));
-                    IrisLootTable irisLoot = data.getData().getGson()
+                    Iris.verbose(String.format(
+                        "Writing vanilla structure loot file from '%s' to '%s'",
+                        structurePath,
+                        tablePath
+                    ));
+                    IrisLootTable irisLoot = dataProvider.getData().getGson()
                         .fromJson(new JSONObject(IO.readAll(structure)).toString(0), IrisLootTable.class);
                     IO.writeAll(new File(tablePath), IrisLootToVanilla.toJson(irisLoot, structureName));
                 } catch (IOException ex) {
                     Iris.error("Error writing vanilla structure loot '%s': %s", structureName, ex.toString());
-                    return changed;
+                    return;
                 }
 
                 continue;
             }
 
             File dstFile = new File(tablePath);
-            dstFile.mkdirs();
+            try {
+                dstFile.mkdirs();
+            } catch (SecurityException ex) {
+                Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+            }
+
             String destPath = dstFile.getPath();
             String[] entries = structure.list();
             for (String entry : entries) {
@@ -547,18 +573,23 @@ public class IrisDimension extends IrisRegistrant {
                 }
 
                 try {
-                    Iris.debug(String.format("Writing vanilla structure loot file from '%s' to '%s'", structurePath + "/" + entry, destPath + "/" + entry));
-                    IrisLootTable irisLoot = data.getData().getGson()
+                    Iris.verbose(String.format(
+                        "Writing vanilla structure loot file from '%s' to '%s'",
+                        structurePath + "/" + entry,
+                        destPath + "/" + entry
+                    ));
+                    IrisLootTable irisLoot = dataProvider.getData().getGson()
                         .fromJson(new JSONObject(IO.readAll(entryFile)).toString(0), IrisLootTable.class);
-                    IO.writeAll(new File(destPath, entry), IrisLootToVanilla.toJson(irisLoot, structureName + "/" + entry.split("\\Q.\\E")[0]));
+                    IO.writeAll(
+                        new File(destPath, entry),
+                        IrisLootToVanilla.toJson(irisLoot, structureName + "/" + entry.split("\\Q.\\E")[0])
+                    );
                 } catch (IOException ex) {
                     Iris.error("Error writing structure loot '%s': %s", structureName, ex.toString());
-                    return changed;
+                    return;
                 }
             }
         }
-
-        return changed;
     }
 
     @Override
