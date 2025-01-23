@@ -1,8 +1,13 @@
+<!--
+  Changes (YYYY-MM-DD):
+    - 2025-01-23 @xIRoXaSx: Modified GitHub url.
+-->
+
 # Iris
 
 The master branch is for the latest version of minecraft.
 
-# [Support](https://discord.gg/3xxPTpT) **|** [Documentation](https://docs.volmit.com/iris/) **|** [Git](https://github.com/IrisDimensions)
+# [Documentation](https://docs.volmit.com/iris/) **|** [Git](https://github.com/LizardNetworkMC)
 
 # Building
 

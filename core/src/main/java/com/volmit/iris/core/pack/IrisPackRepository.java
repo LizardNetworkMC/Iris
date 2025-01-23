@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Refactored method to use centralized constants for the Iris pack.
  */
 
 package com.volmit.iris.core.pack;
@@ -21,6 +25,7 @@ package com.volmit.iris.core.pack;
 import com.volmit.iris.Iris;
 import com.volmit.iris.core.service.StudioSVC;
 import com.volmit.iris.util.format.Form;
+import com.volmit.iris.util.consts.GitHub;
 import com.volmit.iris.util.plugin.VolmitSender;
 import com.volmit.iris.util.scheduling.jobs.DownloadJob;
 import com.volmit.iris.util.scheduling.jobs.JobCollection;
@@ -39,7 +44,7 @@ import java.util.UUID;
 @Builder
 public class IrisPackRepository {
     @Builder.Default
-    private String user = "IrisDimensions";
+    private String user = GitHub.getDimensionPackOrganization();
 
     @Builder.Default
     private String repo = "overworld";
@@ -54,7 +59,7 @@ public class IrisPackRepository {
      *
      */
     public static IrisPackRepository from(String g) {
-        // https://github.com/IrisDimensions/overworld
+        // https://github.com/LizardNetworkMC/overworld
         if (g.startsWith("https://github.com/")) {
             String sub = g.split("\\Qgithub.com/\\E")[1];
             IrisPackRepository r = IrisPackRepository.builder()
@@ -92,9 +97,9 @@ public class IrisPackRepository {
             }
         } else {
             return IrisPackRepository.builder()
-                    .user("IrisDimensions")
+                    .user(GitHub.getDimensionPackOrganization())
                     .repo(g)
-                    .branch(g.equals("overworld") ? "stable" : "master")
+                    .branch(g.equals(GitHub.getDimensionPackName()) ? "stable" : "master")
                     .build();
         }
 

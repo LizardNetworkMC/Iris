@@ -1,3 +1,25 @@
+/*
+ * Iris is a World Generator for Minecraft Bukkit Servers
+ * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added license notice, refactored method to minimize nesting.
+ */
+
 package com.volmit.iris.engine.framework.placer;
 
 import com.volmit.iris.Iris;
@@ -51,34 +73,34 @@ public class WorldObjectPlacer implements IObjectPlacer {
     @Override
     public void set(int x, int y, int z, BlockData d) {
         Block block = world.getBlockAt(x, y + world.getMinHeight(), z);
-
-        if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) return;
-        InventorySlotType slot = null;
-        if (B.isStorageChest(d)) {
-            slot = InventorySlotType.STORAGE;
+        if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) {
+            return;
         }
-
-        if (slot != null) {
-            RNG rx = new RNG(Cache.key(x, z));
-            KList<IrisLootTable> tables = engine.getLootTables(rx, block);
-
-            try {
-                Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
-
-                if (!tables.isEmpty()){
-                    Iris.debug("IrisLootEvent has been accessed");
-                }
-
-                if (tables.isEmpty())
-                    return;
-                InventoryHolder m = (InventoryHolder) block.getState();
-                engine.addItems(false, m.getInventory(), rx, tables, slot, world, x, y, z, 15);
-            } catch (Throwable e) {
-                Iris.reportError(e);
-            }
-        }
-
         block.setBlockData(d);
+
+        InventorySlotType slot = InventorySlotType.STORAGE;
+        if (!B.isStorageChest(d)) {
+            return;
+        }
+
+        RNG rx = new RNG(Cache.key(x, z));
+        KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+
+        try {
+            Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
+
+            if (!tables.isEmpty()){
+                Iris.debug("IrisLootEvent has been accessed");
+            }
+
+            if (tables.isEmpty()) {
+                return;
+            }
+            InventoryHolder m = (InventoryHolder) block;
+            engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
+        } catch (Throwable e) {
+            Iris.reportError(e);
+        }
     }
 
     @Override

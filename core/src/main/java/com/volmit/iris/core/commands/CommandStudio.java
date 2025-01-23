@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added location variable.
  */
 
 package com.volmit.iris.core.commands;
@@ -62,6 +66,7 @@ import io.papermc.lib.PaperLib;
 import org.bukkit.*;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.Location;
 import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 
@@ -300,9 +305,10 @@ public class CommandStudio implements DecreeExecutor {
 
         KList<IrisLootTable> tables = engine().getLootTables(RNG.r, player().getLocation().getBlock());
         Inventory inv = Bukkit.createInventory(null, 27 * 2);
+        Location location = player().getLocation();
 
         try {
-            engine().addItems(true, inv, RNG.r, tables, InventorySlotType.STORAGE, player().getWorld(), player().getLocation().getBlockX(), player().getLocation().getBlockY(), player().getLocation().getBlockZ(), 1);
+            engine().addItems(true, inv, location.getBlock(), RNG.r, tables, InventorySlotType.STORAGE, player().getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), 1);
         } catch (Throwable e) {
             Iris.reportError(e);
             sender().sendMessage(C.RED + "Cannot add items to virtual inventory because of: " + e.getMessage());
@@ -325,7 +331,7 @@ public class CommandStudio implements DecreeExecutor {
                 inv.clear();
             }
 
-            engine().addItems(true, inv, new RNG(RNG.r.imax()), tables, InventorySlotType.STORAGE, player().getWorld(), player().getLocation().getBlockX(), player().getLocation().getBlockY(), player().getLocation().getBlockZ(), 1);
+            engine().addItems(true, inv, location.getBlock(), new RNG(RNG.r.imax()), tables, InventorySlotType.STORAGE, player().getWorld(), player().getLocation().getBlockX(), player().getLocation().getBlockY(), player().getLocation().getBlockZ(), 1);
         }, 0, fast ? 5 : 35));
 
         sender().sendMessage(C.GREEN + "Opening inventory now!");

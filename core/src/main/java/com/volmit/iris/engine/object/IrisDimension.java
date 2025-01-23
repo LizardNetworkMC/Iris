@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added funtionality to serialize vanilla structure loot tables.
  */
 
 package com.volmit.iris.engine.object;
@@ -26,6 +30,7 @@ import com.volmit.iris.core.nms.datapack.IDataFixer;
 import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.object.annotations.*;
 import com.volmit.iris.util.collection.KList;
+import com.volmit.iris.util.conv.IrisLootToVanilla;
 import com.volmit.iris.util.data.DataProvider;
 import com.volmit.iris.util.io.IO;
 import com.volmit.iris.util.json.JSONObject;
@@ -443,31 +448,31 @@ public class IrisDimension extends IrisRegistrant {
         return landBiomeStyle;
     }
 
-    public boolean installDataPack(IDataFixer fixer, DataProvider data, File datapacks, double ultimateMaxHeight, double ultimateMinHeight) {
+    public boolean installDataPack(File pack, IDataFixer fixer, DataProvider data, File datapacks, double ultimateMaxHeight, double ultimateMinHeight) {
         boolean write = false;
         boolean changed = false;
-
-        IO.delete(new File(datapacks, "iris/data/" + getLoadKey().toLowerCase()));
+        String dataPath = "iris/data/";
+        IO.delete(new File(datapacks, dataPath + getLoadKey().toLowerCase()));
 
         for (IrisBiome i : getAllBiomes(data)) {
-            if (i.isCustom()) {
-                write = true;
+            if (!i.isCustom()) {
+                continue;
+            }
 
-                for (IrisBiomeCustom j : i.getCustomDerivitives()) {
-                    File output = new File(datapacks, "iris/data/" + getLoadKey().toLowerCase() + "/worldgen/biome/" + j.getId() + ".json");
+            write = true;
+            for (IrisBiomeCustom j : i.getCustomDerivitives()) {
+                File output = new File(datapacks, dataPath + getLoadKey().toLowerCase() + "/worldgen/biome/" + j.getId() + ".json");
+                if (!output.exists()) {
+                    changed = true;
+                }
 
-                    if (!output.exists()) {
-                        changed = true;
-                    }
-
-                    Iris.verbose("    Installing Data Pack Biome: " + output.getPath());
-                    output.getParentFile().mkdirs();
-                    try {
-                        IO.writeAll(output, j.generateJson(fixer));
-                    } catch (IOException e) {
-                        Iris.reportError(e);
-                        e.printStackTrace();
-                    }
+                Iris.verbose("    Installing Data Pack Biome: " + output.getPath());
+                output.getParentFile().mkdirs();
+                try {
+                    IO.writeAll(output, j.generateJson(fixer));
+                } catch (IOException e) {
+                    Iris.reportError(e);
+                    e.printStackTrace();
                 }
             }
         }
@@ -479,25 +484,110 @@ public class IrisDimension extends IrisRegistrant {
             changed = writeDimensionType(fixer, changed, datapacks);
         }
 
-        if (write) {
-            File mcm = new File(datapacks, "iris/pack.mcmeta");
-            try {
-                IO.writeAll(mcm, """
-                        {
-                            "pack": {
-                                "description": "Iris Data Pack. This pack contains all installed Iris Packs' resources.",
-                                "pack_format": {}
-                            }
-                        }
-                        """.replace("{}", INMS.get().getDataVersion().getPackFormat() + ""));
-            } catch (IOException e) {
-                Iris.reportError(e);
-                e.printStackTrace();
-            }
-            Iris.verbose("    Installing Data Pack MCMeta: " + mcm.getPath());
+        if (!write) {
+            return changed;
         }
 
+        File mcm = new File(datapacks, "iris/pack.mcmeta");
+        Iris.verbose("    Installing Data Pack MCMeta: " + mcm.getPath());
+        try {
+            IO.writeAll(mcm, """
+                    {
+                        "pack": {
+                            "description": "Iris Data Pack. This pack contains all installed Iris Packs' resources.",
+                            "pack_format": {}
+                        }
+                    }
+                    """.replace("{}", INMS.get().getDataVersion().getPackFormat() + ""));
+        } catch (IOException e) {
+            Iris.reportError(e);
+            e.printStackTrace();
+        }
+
+        // Write the loot tables (only structures).
+        copyVanillaStructureLootTables(pack, datapacks, data);
         return changed;
+    }
+
+    private void copyVanillaStructureLootTables(File pack, File datapacks, DataProvider dataProvider) {
+        String dataPath = "iris/data/";
+        boolean changed = false;
+
+        // Write the loot tables (only structures).
+        String lootTableDirName = IrisLootToVanilla.lootDirectoryName();
+        String lootStructurePath = "loot/structures";
+        File irisLootStructures = new File(pack.getPath() + "/" + lootStructurePath);
+        if (!irisLootStructures.isDirectory()) {
+            Iris.error("structure path '%s' is not a directory", irisLootStructures.getName());
+            return;
+        }
+
+        String structureRootDir = irisLootStructures.getPath();
+        String[] structureNames = irisLootStructures.list();
+        String lootTableChestDir = datapacks.getPath() + "/" + dataPath + getLoadKey().toLowerCase() + "/" + lootTableDirName + "/chests/" ;
+        try {
+            new File(lootTableChestDir).mkdirs();
+        } catch (SecurityException ex) {
+            Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+            return;
+        }
+
+        for (String structureName : structureNames) {
+            String structurePath = structureRootDir + "/" + structureName;
+            File structure = new File(structurePath);
+            String tablePath = lootTableChestDir + structureName;
+            if (!structure.isDirectory()) {
+                try {
+                    Iris.verbose(String.format(
+                        "Writing vanilla structure loot file from '%s' to '%s'",
+                        structurePath,
+                        tablePath
+                    ));
+                    IrisLootTable irisLoot = dataProvider.getData().getGson()
+                        .fromJson(new JSONObject(IO.readAll(structure)).toString(0), IrisLootTable.class);
+                    IO.writeAll(new File(tablePath), IrisLootToVanilla.toJson(irisLoot, structureName));
+                } catch (IOException ex) {
+                    Iris.error("Error writing vanilla structure loot '%s': %s", structureName, ex.toString());
+                    return;
+                }
+
+                continue;
+            }
+
+            File dstFile = new File(tablePath);
+            try {
+                dstFile.mkdirs();
+            } catch (SecurityException ex) {
+                Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+            }
+
+            String destPath = dstFile.getPath();
+            String[] entries = structure.list();
+            for (String entry : entries) {
+                File entryFile = new File(structurePath, entry);
+                if (entryFile.isDirectory()) {
+                    Iris.warn("Skipping nested loot tables '%s'", entry);
+                    continue;
+                }
+
+                try {
+                    Iris.verbose(String.format(
+                        "Writing vanilla structure loot file from '%s' to '%s'",
+                        structurePath + "/" + entry,
+                        destPath + "/" + entry
+                    ));
+                    IrisLootTable irisLoot = dataProvider.getData().getGson()
+                        .fromJson(new JSONObject(IO.readAll(entryFile)).toString(0), IrisLootTable.class);
+                    IO.writeAll(
+                        new File(destPath, entry),
+                        IrisLootToVanilla.toJson(irisLoot, structureName + "/" + entry.split("\\Q.\\E")[0])
+                    );
+                } catch (IOException ex) {
+                    Iris.error("Error writing structure loot '%s': %s", structureName, ex.toString());
+                    return;
+                }
+            }
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,10 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added Iris studio worlds to the list of worlds to install datapacks into.
+ *                          Refactored methods to minimze nesting.
  */
 
 package com.volmit.iris.core;
@@ -90,6 +95,18 @@ public class ServerConfigurator {
         }
         KList<File> worlds = new KList<>();
         Bukkit.getServer().getWorlds().forEach(w -> worlds.add(new File(w.getWorldFolder(), "datapacks")));
+
+        // Add iris studio worlds to the list as well.
+        File irisDir = new File("iris/");
+        try {
+            String[] studioWorlds = irisDir.list();
+            for (String worldName : studioWorlds) {
+                worlds.add(new File(irisDir, worldName + "/datapacks"));
+            }
+        } catch (SecurityException ex) {
+            Iris.debug("unable to read iris studio directory, skipping datapack folders.");
+        }
+
         return worlds;
     }
 
@@ -99,62 +116,86 @@ public class ServerConfigurator {
 
     public static void installDataPacks(IDataFixer fixer, boolean fullInstall) {
         Iris.info("Checking Data Packs...");
-        File packs = new File("plugins/Iris/packs");
+        String packsPath = "plugins/Iris/packs";
+        File packs = new File(packsPath);
         double ultimateMaxHeight = 0;
         double ultimateMinHeight = 0;
-        if (packs.exists() && packs.isDirectory()) {
-            for (File pack : packs.listFiles()) {
-                IrisData data = IrisData.get(pack);
-                if (pack.isDirectory()) {
-                    File dimensionsFolder = new File(pack, "dimensions");
-                    if (dimensionsFolder.exists() && dimensionsFolder.isDirectory()) {
-                        for (File file : dimensionsFolder.listFiles()) {
-                            if (file.isFile() && file.getName().endsWith(".json")) {
-                                IrisDimension dim = data.getDimensionLoader().load(file.getName().split("\\Q.\\E")[0]);
-                                if (ultimateMaxHeight < dim.getDimensionHeight().getMax()) {
-                                    ultimateMaxHeight = dim.getDimensionHeight().getMax();
-                                }
-                                if (ultimateMinHeight > dim.getDimensionHeight().getMin()) {
-                                    ultimateMinHeight = dim.getDimensionHeight().getMin();
-                                }
-                            }
-                        }
-                    }
+        if (!packs.exists()) {
+            Iris.info("Currently no data packs to setup!");
+            return;
+        }
+
+        if (!packs.isDirectory()) {
+            Iris.error("'%s' should be a directroy but was a file!", packsPath);
+            return;
+        }
+
+        // Get max and min height.
+        for (File pack : packs.listFiles()) {
+            IrisData data = IrisData.get(pack);
+            if (!pack.isDirectory()) {
+                continue;
+            }
+
+            File dimensionsFolder = new File(pack, "dimensions");
+            if (!dimensionsFolder.exists()) {
+                Iris.warn("'%s' currently does not exist.", dimensionsFolder.getPath());
+                break;
+            }
+            if (!dimensionsFolder.isDirectory()) {
+                Iris.warn("'%s' should be a directroy but was a file!", dimensionsFolder.getPath());
+                break;
+            }
+
+            for (File dimFile : dimensionsFolder.listFiles()) {
+                if (!dimFile.isFile() || !dimFile.getName().endsWith(".json")) {
+                    continue;
+                }
+
+                IrisDimension dim = data.getDimensionLoader().load(dimFile.getName().split("\\Q.\\E")[0]);
+                if (ultimateMaxHeight < dim.getDimensionHeight().getMax()) {
+                    ultimateMaxHeight = dim.getDimensionHeight().getMax();
+                }
+                if (ultimateMinHeight > dim.getDimensionHeight().getMin()) {
+                    ultimateMinHeight = dim.getDimensionHeight().getMin();
                 }
             }
         }
 
-        if (packs.exists()) {
-            for (File i : packs.listFiles()) {
-                if (i.isDirectory()) {
-                    Iris.verbose("Checking Pack: " + i.getPath());
-                    IrisData data = IrisData.get(i);
-                    File dims = new File(i, "dimensions");
+        for (File pack : packs.listFiles()) {
+            if (!pack.isDirectory()) {
+                continue;
+            }
 
-                    if (dims.exists()) {
-                        for (File j : dims.listFiles()) {
-                            if (j.getName().endsWith(".json")) {
-                                IrisDimension dim = data.getDimensionLoader().load(j.getName().split("\\Q.\\E")[0]);
+            Iris.verbose("Checking pack: " + pack.getPath());
+            IrisData data = IrisData.get(pack);
+            File dims = new File(pack, "dimensions");
+            if (!dims.exists()) {
+                continue;
+            }
 
-                                if (dim == null) {
-                                    continue;
-                                }
+            for (File dimFile : dims.listFiles()) {
+                if (!dimFile.getName().endsWith(".json")) {
+                    continue;
+                }
 
-                                Iris.verbose("  Checking Dimension " + dim.getLoadFile().getPath());
-                                for (File dpack : getDatapacksFolder()) {
-                                    dim.installDataPack(fixer, () -> data, dpack, ultimateMaxHeight, ultimateMinHeight);
-                                }
-                            }
-                        }
-                    }
+                IrisDimension dim = data.getDimensionLoader().load(dimFile.getName().split("\\Q.\\E")[0]);
+                if (dim == null) {
+                    continue;
+                }
+
+                Iris.verbose("  Checking Dimension " + dim.getLoadFile().getPath());
+                List<File> datapacks = getDatapacksFolder();
+                for (File dpack : datapacks) {
+                    dim.installDataPack(pack, fixer, () -> data, dpack, ultimateMaxHeight, ultimateMinHeight);
                 }
             }
         }
 
         Iris.info("Data Packs Setup!");
-
-        if (fullInstall)
+        if (fullInstall) {
             verifyDataPacksPost(IrisSettings.get().getAutoConfiguration().isAutoRestartOnCustomBiomeInstall());
+        }
     }
 
     private static void verifyDataPacksPost(boolean allowRestarting) {

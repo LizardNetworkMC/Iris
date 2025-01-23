@@ -1,6 +1,7 @@
 /*
  * Iris is a World Generator for Minecraft Bukkit Servers
  * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +15,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
  */
 
 package com.volmit.iris.engine.framework;
@@ -40,6 +44,7 @@ import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.collection.KMap;
 import com.volmit.iris.util.context.ChunkContext;
 import com.volmit.iris.util.context.IrisContext;
+import com.volmit.iris.util.conv.VanillaLoot;
 import com.volmit.iris.util.data.B;
 import com.volmit.iris.util.data.DataProvider;
 import com.volmit.iris.util.data.IrisBlockData;
@@ -65,6 +70,7 @@ import com.volmit.iris.util.scheduling.J;
 import com.volmit.iris.util.scheduling.PrecisionStopwatch;
 import com.volmit.iris.util.stream.ProceduralStream;
 import io.papermc.lib.PaperLib;
+
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -311,33 +317,38 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
             PrecisionStopwatch p = PrecisionStopwatch.start();
             KMap<Long, Integer> updates = new KMap<>();
             RNG r = new RNG(Cache.key(c.getX(), c.getZ()));
+            BlockFace[] faces = new BlockFace[] {
+                BlockFace.DOWN,
+                BlockFace.WEST,
+                BlockFace.EAST,
+                BlockFace.SOUTH,
+                BlockFace.NORTH
+            };
             mantle.iterateChunk(c.getX(), c.getZ(), MatterCavern.class, (x, yf, z, v) -> {
                 int y = yf + getWorld().minHeight();
-                if (!B.isFluid(c.getBlock(x & 15, y, z & 15).getBlockData())) {
+                Block blk = c.getBlock(x & 15, y, z & 15);
+                if (!B.isFluid(blk.getBlockData())) {
                     return;
                 }
                 boolean u = false;
-                if (B.isAir(c.getBlock(x & 15, y, z & 15).getRelative(BlockFace.DOWN).getBlockData())) {
-                    u = true;
-                } else if (B.isAir(c.getBlock(x & 15, y, z & 15).getRelative(BlockFace.WEST).getBlockData())) {
-                    u = true;
-                } else if (B.isAir(c.getBlock(x & 15, y, z & 15).getRelative(BlockFace.EAST).getBlockData())) {
-                    u = true;
-                } else if (B.isAir(c.getBlock(x & 15, y, z & 15).getRelative(BlockFace.SOUTH).getBlockData())) {
-                    u = true;
-                } else if (B.isAir(c.getBlock(x & 15, y, z & 15).getRelative(BlockFace.NORTH).getBlockData())) {
-                    u = true;
+
+                for (BlockFace face : faces) {
+                    if (B.isAir(blk.getRelative(face).getBlockData())) {
+                        u = true;
+                        break;
+                    }
+                }
+                if (!u) {
+                    return;
                 }
 
-                if (u) {
-                    updates.compute(Cache.key(x & 15, z & 15), (k, vv) -> {
-                        if (vv != null) {
-                            return Math.max(vv, y);
-                        }
+                updates.compute(Cache.key(x & 15, z & 15), (k, vv) -> {
+                    if (vv != null) {
+                        return Math.max(vv, y);
+                    }
 
-                        return y;
-                    });
-                }
+                    return y;
+                });
             });
 
             updates.forEach((k, v) -> update(Cache.keyX(k), v, Cache.keyZ(k), c, r));
@@ -390,41 +401,49 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
 
     @BlockCoordinates
     @Override
-
     default void update(int x, int y, int z, Chunk c, RNG rf) {
         Block block = c.getBlock(x, y, z);
+        World world = block.getWorld();
+        Location loc = block.getLocation();
         BlockData data = block.getBlockData();
         blockUpdatedMetric();
-        if (B.isStorage(data)) {
-            RNG rx = rf.nextParallelRNG(BlockPosition.toLong(x, y, z));
-            InventorySlotType slot = null;
-
-            if (B.isStorageChest(data)) {
-                slot = InventorySlotType.STORAGE;
-            }
-
-            if (slot != null) {
-                KList<IrisLootTable> tables = getLootTables(rx, block);
-
-                try {
-                    Bukkit.getPluginManager().callEvent(new IrisLootEvent(this, block, slot, tables));
-
-                    if (!tables.isEmpty()){
-                        Iris.debug("IrisLootEvent has been accessed");
-                    }
-
-                    if (tables.isEmpty())
-                        return;
-                    InventoryHolder m = (InventoryHolder) block.getState();
-                    addItems(false, m.getInventory(), rx, tables, slot, c.getWorld(), x, y, z, 15);
-
-                } catch (Throwable e) {
-                    Iris.reportError(e);
-                }
-            }
-        } else {
+        if (!B.isStorage(data)) {
             block.setType(Material.AIR, false);
             block.setBlockData(data, true);
+            return;
+        }
+
+        RNG rx = rf.nextParallelRNG(BlockPosition.toLong(x, y, z));
+        InventorySlotType slot = InventorySlotType.STORAGE;
+        if (!B.isStorageChest(data)) {
+            return;
+        }
+
+        KList<IrisLootTable> tables = getLootTables(rx, block);
+        try {
+            if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+                int blockY = block.getY() - getWorld().minHeight();
+                PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
+                if (VanillaLoot.setVanillaLootTable(block, po)) {
+                    return;
+                }
+                Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
+            }
+
+            Bukkit.getPluginManager().callEvent(new IrisLootEvent(this, block, slot, tables));
+
+            if (!tables.isEmpty()){
+                Iris.debug("IrisLootEvent has been accessed");
+            }
+
+            if (tables.isEmpty()) {
+                return;
+            }
+            InventoryHolder m = (InventoryHolder) block.getState();
+            addItems(false, m.getInventory(), block, rx, tables, slot, c.getWorld(), x, y, z, 15);
+
+        } catch (Throwable e) {
+            Iris.reportError(e);
         }
     }
 
@@ -529,16 +548,26 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
     }
 
     @Override
-    default void addItems(boolean debug, Inventory inv, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf) {
-        KList<ItemStack> items = new KList<>();
+    default void addItems(boolean debug, Inventory inv, Block block, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf) {
+        if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+            int blockY = block.getY() - getWorld().minHeight();
+            PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
+            if (VanillaLoot.setVanillaLootTable(block, po)) {
+                return;
+            }
 
-        for (IrisLootTable i : tables) {
-            if (i == null)
-                continue;
-            items.addAll(i.getLoot(debug, rng, slot, world, x, y, z));
+            Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
         }
-        if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z))
+
+        KList<ItemStack> items = new KList<>();
+        for (IrisLootTable i : tables) {
+            if (i != null) {
+                items.addAll(i.getLoot(debug, rng, slot, world, x, y, z));
+            }
+        }
+        if (IrisLootEvent.callLootEvent(items, inv, world, x, y, z)) {
             return;
+        }
 
         if (PaperLib.isPaper() && getWorld().hasRealWorld()) {
             PaperLib.getChunkAtAsync(getWorld().realWorld(), x >> 4, z >> 4).thenAccept((c) -> {
