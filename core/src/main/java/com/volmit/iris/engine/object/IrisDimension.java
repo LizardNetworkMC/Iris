@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added funtionality to serialize vanilla structure loot tables.
+ *  - 2025-01-24 @xIRoXaSx: Fixed error logging.
  */
 
 package com.volmit.iris.engine.object;
@@ -528,7 +529,7 @@ public class IrisDimension extends IrisRegistrant {
         try {
             new File(lootTableChestDir).mkdirs();
         } catch (SecurityException ex) {
-            Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+            Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", lootTableChestDir);
             return;
         }
 
@@ -558,7 +559,7 @@ public class IrisDimension extends IrisRegistrant {
             try {
                 dstFile.mkdirs();
             } catch (SecurityException ex) {
-                Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", structureNames);
+                Iris.error("Unable to create directory '%s' for vanilla structure loot tables.", tablePath);
             }
 
             String destPath = dstFile.getPath();
