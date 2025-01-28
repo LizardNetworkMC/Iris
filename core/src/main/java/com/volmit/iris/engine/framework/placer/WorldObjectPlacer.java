@@ -27,6 +27,7 @@ import com.volmit.iris.core.loader.IrisData;
 import com.volmit.iris.core.tools.IrisToolbelt;
 import com.volmit.iris.engine.data.cache.Cache;
 import com.volmit.iris.engine.framework.Engine;
+import com.volmit.iris.core.IrisSettings;
 import com.volmit.iris.core.events.IrisLootEvent;
 import com.volmit.iris.engine.mantle.EngineMantle;
 import com.volmit.iris.engine.object.IObjectPlacer;
@@ -34,12 +35,15 @@ import com.volmit.iris.engine.object.InventorySlotType;
 import com.volmit.iris.engine.object.IrisLootTable;
 import com.volmit.iris.engine.object.TileData;
 import com.volmit.iris.util.collection.KList;
+import com.volmit.iris.util.conv.VanillaLoot;
 import com.volmit.iris.util.data.B;
 import com.volmit.iris.util.math.RNG;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -72,7 +76,7 @@ public class WorldObjectPlacer implements IObjectPlacer {
 
     @Override
     public void set(int x, int y, int z, BlockData d) {
-        Block block = world.getBlockAt(x, y + world.getMinHeight(), z);
+	    Block block = world.getBlockAt(x, y + world.getMinHeight(), z);
         if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) {
             return;
         }
@@ -85,6 +89,12 @@ public class WorldObjectPlacer implements IObjectPlacer {
 
         RNG rx = new RNG(Cache.key(x, z));
         KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+        if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+            IrisLootTable randomTable = tables.getRandom();
+            String randomTableRelativePath = randomTable.getLoadFile().getPath().replaceFirst("[\\/]?plugins/Iris/packs/overworld/loot[\\/]?", "");
+            VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("minecraft:chests/%s", randomTableRelativePath)), block.getLocation());
+            return;
+        }
 
         try {
             Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));

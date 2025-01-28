@@ -72,6 +72,7 @@ import com.volmit.iris.util.stream.ProceduralStream;
 import io.papermc.lib.PaperLib;
 
 import org.bukkit.*;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -426,7 +427,16 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
                 if (VanillaLoot.setVanillaLootTable(block, po)) {
                     return;
                 }
-                Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
+
+                IrisLootTable randomTable = tables.getRandom();
+                String randomTableRelativePath = randomTable.getLoadFile()
+                    .getPath()
+                    .trim()
+                    .replaceFirst("plugins/Iris/packs/overworld/loot[\\/]?", "")
+                    .replaceAll("\\Q.json\\E", "");
+                    Iris.debug("Failed to use placed object loot tables, using converted iris'.");
+                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("minecraft:chests/%s", randomTableRelativePath)), block.getLocation());
+                return;
             }
 
             Bukkit.getPluginManager().callEvent(new IrisLootEvent(this, block, slot, tables));
@@ -508,12 +518,13 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
         KList<IrisLootTable> tables = new KList<>();
 
         PlacedObject po = getObjectPlacement(rx, ry, rz);
-        if (po != null && po.getPlacement() != null) {
+        IrisObjectPlacement iop = po.getPlacement();
+        if (po != null && iop != null) {
             if (B.isStorageChest(b.getBlockData())) {
-                IrisLootTable table = po.getPlacement().getTable(b.getBlockData(), getData());
+                IrisLootTable table = iop.getTable(b.getBlockData(), getData());
                 if (table != null) {
                     tables.add(table);
-                    if (po.getPlacement().isOverrideGlobalLoot()) {
+                    if (iop.isOverrideGlobalLoot()) {
                         return new KList<>(table);
                     }
                 }
@@ -548,16 +559,6 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
 
     @Override
     default void addItems(boolean debug, Inventory inv, Block block, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf) {
-        if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
-            int blockY = block.getY() - getWorld().minHeight();
-            PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-            if (VanillaLoot.setVanillaLootTable(block, po)) {
-                return;
-            }
-
-            Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
-        }
-
         KList<ItemStack> items = new KList<>();
         for (IrisLootTable i : tables) {
             if (i != null) {

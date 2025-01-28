@@ -64,10 +64,10 @@ public record VanillaLoot(String type, String randomSequence, KList<VanillaLootP
             setLootTable(key, originBlock.getLocation());
         }
 
-        return true;
+        return tableNames.length > 0;
     }
 
-    private static void setLootTable(NamespacedKey lootTableKey, Location loc) {
+    public static void setLootTable(NamespacedKey lootTableKey, Location loc) {
         Block blk = loc.getBlock();
         if (!(blk.getState() instanceof Lootable)) {
             return;

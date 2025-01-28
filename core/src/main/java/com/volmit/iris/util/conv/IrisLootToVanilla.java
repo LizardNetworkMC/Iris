@@ -37,11 +37,9 @@ public class IrisLootToVanilla {
         String lootTableDirName = "loot_table";
 
         try {
-            lootTableDirName = versions.length < 2
-                ? "loot_tables"
-                : (versions[0] == "1" && Integer.decode(versions[1]) >= 21)
-                    ? "loot_table"
-                    : "loot_tables";
+            if (versions.length < 2 || Integer.decode(versions[0]) != 1 || Integer.decode(versions[1]) < 21) {
+                lootTableDirName = "loot_tables";
+            }
         } catch (NumberFormatException ex) {
             Iris.warn("Unable to decode server version, using loot table dir fallback");
         }
@@ -113,7 +111,7 @@ public class IrisLootToVanilla {
 
         VanillaLoot vanillaLoot = new VanillaLoot(
             lootType,
-            String.format("%ss/%s", lootType, fileName),
+            String.format("%ss/%s", lootType, fileName.replaceAll("\\Q.json\\E", "")),
             pools
         );
 
