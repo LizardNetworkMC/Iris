@@ -92,7 +92,7 @@ public class WorldObjectPlacer implements IObjectPlacer {
         if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
             IrisLootTable randomTable = tables.getRandom();
             String randomTableRelativePath = randomTable.getLoadFile().getPath().replaceFirst("[\\/]?plugins/Iris/packs/overworld/loot[\\/]?", "");
-            VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("minecraft:chests/%s", randomTableRelativePath)), block.getLocation());
+            VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", getEngine().getDimension().getName().toLowerCase(), randomTableRelativePath)), block.getLocation());
             return;
         }
 

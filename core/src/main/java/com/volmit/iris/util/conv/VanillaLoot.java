@@ -53,14 +53,15 @@ public record VanillaLoot(String type, String randomSequence, KList<VanillaLootP
         return json.toString(4);
     }
 
-    public static boolean setVanillaLootTable(Block originBlock, PlacedObject placed) {
+    public static boolean setVanillaLootTable(Block originBlock, PlacedObject placed, String namespace) {
         if (placed == null || placed.getPlacement() == null) {
             return false;
         }
 
         String[] tableNames = placed.getPlacement().getVanillaLootTableName();
         for (String name : tableNames) {
-            NamespacedKey key = NamespacedKey.fromString(name);
+            // We need to replace the namespace to match our converted loot tables.
+            NamespacedKey key = NamespacedKey.fromString(name.replaceFirst("^minecraft", namespace));
             setLootTable(key, originBlock.getLocation());
         }
 

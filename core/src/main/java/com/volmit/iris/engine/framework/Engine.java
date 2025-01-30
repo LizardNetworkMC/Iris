@@ -424,7 +424,7 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
             if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
                 int blockY = block.getY() - getWorld().minHeight();
                 PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-                if (VanillaLoot.setVanillaLootTable(block, po)) {
+                if (VanillaLoot.setVanillaLootTable(block, po, getDimension().getName().toLowerCase())) {
                     return;
                 }
 
@@ -434,8 +434,8 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
                     .trim()
                     .replaceFirst("plugins/Iris/packs/overworld/loot[\\/]?", "")
                     .replaceAll("\\Q.json\\E", "");
-                    Iris.debug("Failed to use placed object loot tables, using converted iris'.");
-                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("minecraft:chests/%s", randomTableRelativePath)), block.getLocation());
+                Iris.debug("Failed to use placed object loot tables, using converted iris' instead.");
+                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", getDimension().getName().toLowerCase(), randomTableRelativePath)), block.getLocation());
                 return;
             }
 

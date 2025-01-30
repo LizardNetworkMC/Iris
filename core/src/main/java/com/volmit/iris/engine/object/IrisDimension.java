@@ -564,7 +564,7 @@ public class IrisDimension extends IrisRegistrant {
 
             String relativeLootPath = Paths.get(lootRelativePath, lootName).toString();
             String lootTablePath = Paths.get(destinationRootPath, relativeLootPath).toString();
-            Iris.info(String.format("Converting '%s', destination='%s', irisSourceLootFile='%s'", path, lootTablePath, irisSourceLootFile));
+            Iris.verbose(String.format("Converting '%s', destination='%s', irisSourceLootFile='%s'", path, lootTablePath, irisSourceLootFile));
             try {
                 Iris.verbose(String.format(
                     "Writing vanilla structure loot file from '%s' to '%s'",
