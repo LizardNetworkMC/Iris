@@ -18,6 +18,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
+ *  - 2025-01-30 @xIRoXaSx: Modifiactions to use random fallback loot table
+ *                          if vanilla loot table could not be found.
  */
 
 package com.volmit.iris.engine.framework;
@@ -422,9 +424,10 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
         KList<IrisLootTable> tables = getLootTables(rx, block);
         try {
             if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+                String dimNameLowerCase = getDimension().getName().toLowerCase();
                 int blockY = block.getY() - getWorld().minHeight();
                 PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-                if (VanillaLoot.setVanillaLootTable(block, po, getDimension().getName().toLowerCase())) {
+                if (VanillaLoot.setVanillaLootTable(block, po, dimNameLowerCase)) {
                     return;
                 }
 
@@ -432,10 +435,10 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
                 String randomTableRelativePath = randomTable.getLoadFile()
                     .getPath()
                     .trim()
-                    .replaceFirst("plugins/Iris/packs/overworld/loot[\\/]?", "")
+                    .replaceFirst(String.format("plugins/Iris/packs/%s/loot[\\/]?", dimNameLowerCase), "")
                     .replaceAll("\\Q.json\\E", "");
                 Iris.debug("Failed to use placed object loot tables, using converted iris' instead.");
-                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", getDimension().getName().toLowerCase(), randomTableRelativePath)), block.getLocation());
+                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", dimNameLowerCase, randomTableRelativePath)), block.getLocation());
                 return;
             }
 

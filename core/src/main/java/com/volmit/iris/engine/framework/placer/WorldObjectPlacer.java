@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added license notice, refactored method to minimize nesting.
+ *  - 2025-01-30 @xIRoXaSx: Added vanilla loot generation option.
  */
 
 package com.volmit.iris.engine.framework.placer;
@@ -90,9 +91,16 @@ public class WorldObjectPlacer implements IObjectPlacer {
         RNG rx = new RNG(Cache.key(x, z));
         KList<IrisLootTable> tables = engine.getLootTables(rx, block);
         if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+            String dimNameLowerCase = getEngine().getDimension().getName().toLowerCase();
             IrisLootTable randomTable = tables.getRandom();
-            String randomTableRelativePath = randomTable.getLoadFile().getPath().replaceFirst("[\\/]?plugins/Iris/packs/overworld/loot[\\/]?", "");
-            VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", getEngine().getDimension().getName().toLowerCase(), randomTableRelativePath)), block.getLocation());
+            String randomTableRelativePath = randomTable
+                .getLoadFile()
+                .getPath()
+                .replaceFirst(String.format("[\\/]?plugins/Iris/packs/%s/loot[\\/]?", dimNameLowerCase), "");
+            VanillaLoot.setLootTable(
+                NamespacedKey.fromString(String.format("%s:chests/%s", dimNameLowerCase, randomTableRelativePath)),
+                block.getLocation()
+            );
             return;
         }
 

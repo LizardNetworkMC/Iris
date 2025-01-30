@@ -17,6 +17,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Modified setVanillaLootTable so that it only returns true if
+ *                          vanilla loot tables have been found.
  */
 
 package com.volmit.iris.util.conv;

@@ -17,6 +17,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Updated dimension pack tag.
  */
 
 package com.volmit.iris.util.consts;

@@ -17,6 +17,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Modifications for recursive loot table generation.
+ *                          Fixed and improved lootDirectoryName method.
  */
 
 package com.volmit.iris.util.conv;

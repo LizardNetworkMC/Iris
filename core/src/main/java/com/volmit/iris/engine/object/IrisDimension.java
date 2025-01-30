@@ -18,6 +18,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added funtionality to serialize vanilla structure loot tables.
+ *  - 2025-01-30 @xIRoXaSx: Refactored vanilla loot table registring.
+ *  -                       Added recursive loot table generation.
  */
 
 package com.volmit.iris.engine.object;
@@ -507,7 +509,7 @@ public class IrisDimension extends IrisRegistrant {
             e.printStackTrace();
         }
 
-        // Write the loot tables (only structures).
+        // Write the loot tables.
         String datapackRootPath = "iris/data/";
         String datapackLootTableDirName = IrisLootToVanilla.lootDirectoryName();
         String lootTableChestDir = datapacks.getPath() + "/" + datapackRootPath + getLoadKey().toLowerCase() + "/" + datapackLootTableDirName + "/chests";
@@ -520,11 +522,11 @@ public class IrisDimension extends IrisRegistrant {
 
         // Structures that should not be included in the iris "structures" sub folder but rather in the root loot directory.
         String[] flattenDirs = new String[]{"structures"};
-        copyVanillaLootTables(pack, datapacks, data, lootTableChestDir, flattenDirs, "loot");
+        generateVanillaLootTables(pack, datapacks, data, lootTableChestDir, flattenDirs, "loot");
         return changed;
     }
 
-    private void copyVanillaLootTables(File pack, File datapacks, DataProvider dataProvider, String destinationRootPath, String[] flattenDirs, String path) {
+    private void generateVanillaLootTables(File pack, File datapacks, DataProvider dataProvider, String destinationRootPath, String[] flattenDirs, String path) {
         File irisSourceLootFile = new File(pack.getPath() + "/" + path);
         String irisSoruceDir = irisSourceLootFile.getPath();
         String[] lootNames = irisSourceLootFile.list();
@@ -550,7 +552,7 @@ public class IrisDimension extends IrisRegistrant {
                     return;
                 }
 
-                copyVanillaLootTables(pack, datapacks, dataProvider, destinationRootPath, flattenDirs, String.format("%s/%s", path, lootName));
+                generateVanillaLootTables(pack, datapacks, dataProvider, destinationRootPath, flattenDirs, String.format("%s/%s", path, lootName));
                 continue;
             }
 
