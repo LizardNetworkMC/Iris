@@ -18,6 +18,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
+ *  - 2025-01-30 @xIRoXaSx: Modifiactions to use a random matching fallback loot table
+ *                          if vanilla loot table could not be found.
  */
 
 package com.volmit.iris.engine.framework;
@@ -72,6 +74,7 @@ import com.volmit.iris.util.stream.ProceduralStream;
 import io.papermc.lib.PaperLib;
 
 import org.bukkit.*;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -421,12 +424,22 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
         KList<IrisLootTable> tables = getLootTables(rx, block);
         try {
             if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
+                String dimNameLowerCase = getDimension().getName().toLowerCase();
                 int blockY = block.getY() - getWorld().minHeight();
                 PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-                if (VanillaLoot.setVanillaLootTable(block, po)) {
+                if (VanillaLoot.setVanillaLootTable(block, po, dimNameLowerCase)) {
                     return;
                 }
-                Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
+
+                IrisLootTable randomTable = tables.getRandom();
+                String randomTableRelativePath = randomTable.getLoadFile()
+                    .getPath()
+                    .trim()
+                    .replaceFirst(String.format("plugins/Iris/packs/%s/loot[\\/]?", dimNameLowerCase), "")
+                    .replaceAll("\\Q.json\\E", "");
+                Iris.debug("Failed to use placed object loot tables, using converted iris' instead.");
+                VanillaLoot.setLootTable(NamespacedKey.fromString(String.format("%s:chests/%s", dimNameLowerCase, randomTableRelativePath)), block.getLocation());
+                return;
             }
 
             Bukkit.getPluginManager().callEvent(new IrisLootEvent(this, block, slot, tables));
@@ -508,12 +521,13 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
         KList<IrisLootTable> tables = new KList<>();
 
         PlacedObject po = getObjectPlacement(rx, ry, rz);
-        if (po != null && po.getPlacement() != null) {
+        IrisObjectPlacement iop = po.getPlacement();
+        if (po != null && iop != null) {
             if (B.isStorageChest(b.getBlockData())) {
-                IrisLootTable table = po.getPlacement().getTable(b.getBlockData(), getData());
+                IrisLootTable table = iop.getTable(b.getBlockData(), getData());
                 if (table != null) {
                     tables.add(table);
-                    if (po.getPlacement().isOverrideGlobalLoot()) {
+                    if (iop.isOverrideGlobalLoot()) {
                         return new KList<>(table);
                     }
                 }
@@ -548,16 +562,6 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
 
     @Override
     default void addItems(boolean debug, Inventory inv, Block block, RNG rng, KList<IrisLootTable> tables, InventorySlotType slot, World world, int x, int y, int z, int mgf) {
-        if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
-            int blockY = block.getY() - getWorld().minHeight();
-            PlacedObject po = getObjectPlacement(block.getX(), blockY, block.getZ());
-            if (VanillaLoot.setVanillaLootTable(block, po)) {
-                return;
-            }
-
-            Iris.debug("Failed to use vanilla structure looting system, using iris' own.");
-        }
-
         KList<ItemStack> items = new KList<>();
         for (IrisLootTable i : tables) {
             if (i != null) {
