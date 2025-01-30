@@ -28,6 +28,8 @@ import com.volmit.iris.core.tools.IrisConverter;
 import com.volmit.iris.engine.framework.Engine;
 import com.volmit.iris.engine.object.*;
 import com.volmit.iris.util.data.Cuboid;
+import com.volmit.iris.util.data.IrisCustomData;
+import com.volmit.iris.util.data.registry.Materials;
 import com.volmit.iris.util.decree.DecreeExecutor;
 import com.volmit.iris.util.decree.DecreeOrigin;
 import com.volmit.iris.util.decree.annotations.Decree;
@@ -36,12 +38,9 @@ import com.volmit.iris.util.decree.specialhandlers.ObjectHandler;
 import com.volmit.iris.util.format.C;
 import com.volmit.iris.util.math.Direction;
 import com.volmit.iris.util.math.RNG;
-import com.volmit.iris.util.misc.E;
 import com.volmit.iris.util.scheduling.Queue;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -54,7 +53,7 @@ import java.util.*;
 @Decree(name = "object", aliases = "o", origin = DecreeOrigin.PLAYER, studio = true, description = "Iris object manipulation")
 public class CommandObject implements DecreeExecutor {
 
-    private static final Set<Material> skipBlocks = Set.of(E.getOrDefault(Material.class, "GRASS", "SHORT_GRASS"), Material.SNOW, Material.VINE, Material.TORCH, Material.DEAD_BUSH,
+    private static final Set<Material> skipBlocks = Set.of(Materials.GRASS, Material.SNOW, Material.VINE, Material.TORCH, Material.DEAD_BUSH,
             Material.POPPY, Material.DANDELION);
 
     public static IObjectPlacer createPlacer(World world, Map<Block, BlockData> futureBlockChanges) {
@@ -79,7 +78,10 @@ public class CommandObject implements DecreeExecutor {
 
                 futureBlockChanges.put(block, block.getBlockData());
 
-                block.setBlockData(d);
+                if (d instanceof IrisCustomData data) {
+                    block.setBlockData(data.getBase());
+                    Iris.warn("Tried to place custom block at " + x + ", " + y + ", " + z + " which is not supported!");
+                } else block.setBlockData(d);
             }
 
             @Override
