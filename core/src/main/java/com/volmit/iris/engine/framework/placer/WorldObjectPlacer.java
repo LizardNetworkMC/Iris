@@ -35,6 +35,7 @@ import com.volmit.iris.engine.object.IrisLootTable;
 import com.volmit.iris.engine.object.TileData;
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.data.B;
+import com.volmit.iris.util.data.IrisCustomData;
 import com.volmit.iris.util.math.RNG;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -76,30 +77,38 @@ public class WorldObjectPlacer implements IObjectPlacer {
         if (y <= world.getMinHeight() || block.getType() == Material.BEDROCK) {
             return;
         }
-        block.setBlockData(d);
 
-        InventorySlotType slot = InventorySlotType.STORAGE;
-        if (!B.isStorageChest(d)) {
-            return;
+        InventorySlotType slot = null;
+        if (B.isStorageChest(d)) {
+            slot = InventorySlotType.STORAGE;
         }
 
-        RNG rx = new RNG(Cache.key(x, z));
-        KList<IrisLootTable> tables = engine.getLootTables(rx, block);
+        if (slot != null) {
+            RNG rx = new RNG(Cache.key(x, z));
+            KList<IrisLootTable> tables = engine.getLootTables(rx, block);
 
-        try {
-            Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
+            try {
+                Bukkit.getPluginManager().callEvent(new IrisLootEvent(engine, block, slot, tables));
 
-            if (!tables.isEmpty()){
-                Iris.debug("IrisLootEvent has been accessed");
+                if (!tables.isEmpty()) {
+                    Iris.debug("IrisLootEvent has been accessed");
+                }
+
+                if (tables.isEmpty()) {
+                    return;
+                }
+                InventoryHolder m = (InventoryHolder) block.getState();
+                engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
+            } catch (Throwable e) {
+                Iris.reportError(e);
             }
+        }
 
-            if (tables.isEmpty()) {
-                return;
-            }
-            InventoryHolder m = (InventoryHolder) block;
-            engine.addItems(false, m.getInventory(), block, rx, tables, slot, world, x, y, z, 15);
-        } catch (Throwable e) {
-            Iris.reportError(e);
+        if (d instanceof IrisCustomData data) {
+            block.setBlockData(data.getBase());
+            Iris.warn("Tried to place custom block at " + x + ", " + y + ", " + z + " which is not supported!");
+        } else {
+            block.setBlockData(d);
         }
     }
 
