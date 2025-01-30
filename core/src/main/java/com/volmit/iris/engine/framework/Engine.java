@@ -18,7 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
- *  - 2025-01-30 @xIRoXaSx: Modifiactions to use random fallback loot table
+ *  - 2025-01-30 @xIRoXaSx: Modifiactions to use a random matching fallback loot table
  *                          if vanilla loot table could not be found.
  */
 
