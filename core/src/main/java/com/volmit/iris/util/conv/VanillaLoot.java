@@ -17,6 +17,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Modified setVanillaLootTable so that it only returns true if
+ *                          vanilla loot tables have been found.
  */
 
 package com.volmit.iris.util.conv;
@@ -53,21 +55,22 @@ public record VanillaLoot(String type, String randomSequence, KList<VanillaLootP
         return json.toString(4);
     }
 
-    public static boolean setVanillaLootTable(Block originBlock, PlacedObject placed) {
+    public static boolean setVanillaLootTable(Block originBlock, PlacedObject placed, String namespace) {
         if (placed == null || placed.getPlacement() == null) {
             return false;
         }
 
         String[] tableNames = placed.getPlacement().getVanillaLootTableName();
         for (String name : tableNames) {
-            NamespacedKey key = NamespacedKey.fromString(name);
+            // We need to replace the namespace to match our converted loot tables.
+            NamespacedKey key = NamespacedKey.fromString(name.replaceFirst("^minecraft", namespace));
             setLootTable(key, originBlock.getLocation());
         }
 
-        return true;
+        return tableNames.length > 0;
     }
 
-    private static void setLootTable(NamespacedKey lootTableKey, Location loc) {
+    public static void setLootTable(NamespacedKey lootTableKey, Location loc) {
         Block blk = loc.getBlock();
         if (!(blk.getState() instanceof Lootable)) {
             return;

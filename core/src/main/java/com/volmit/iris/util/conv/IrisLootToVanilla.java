@@ -17,6 +17,8 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Modifications for recursive loot table generation.
+ *                          Fixed and improved lootDirectoryName method.
  */
 
 package com.volmit.iris.util.conv;
@@ -37,11 +39,9 @@ public class IrisLootToVanilla {
         String lootTableDirName = "loot_table";
 
         try {
-            lootTableDirName = versions.length < 2
-                ? "loot_tables"
-                : (versions[0] == "1" && Integer.decode(versions[1]) >= 21)
-                    ? "loot_table"
-                    : "loot_tables";
+            if (versions.length < 2 || Integer.decode(versions[0]) != 1 || Integer.decode(versions[1]) < 21) {
+                lootTableDirName = "loot_tables";
+            }
         } catch (NumberFormatException ex) {
             Iris.warn("Unable to decode server version, using loot table dir fallback");
         }
@@ -113,7 +113,7 @@ public class IrisLootToVanilla {
 
         VanillaLoot vanillaLoot = new VanillaLoot(
             lootType,
-            String.format("%ss/%s", lootType, fileName),
+            String.format("%ss/%s", lootType, fileName.replaceAll("\\Q.json\\E", "")),
             pools
         );
 

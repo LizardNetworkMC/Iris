@@ -17,6 +17,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
+ *  - 2025-01-30 @xIRoXaSx: Updated dimension pack tag.
  */
 
 package com.volmit.iris.util.consts;
@@ -24,7 +25,7 @@ package com.volmit.iris.util.consts;
 public class GitHub {
     private static final String dimensionPackName = "overworld";
     private static final String dimensionPackOrganization = "LizardNetworkMC";
-    private static final String dimensionPackTag = "v3.1.0";
+    private static final String dimensionPackTag = "v3.1.1";
 
     public static String getDimensionPackName() {
         return dimensionPackName;
