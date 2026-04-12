@@ -79,7 +79,7 @@ public class CraftEngineDataProvider extends ExternalDataProvider {
         var key = Key.of(blockId.namespace(), blockId.key());
         if (CraftEngineBlocks.byId(key) == null && CraftEngineFurniture.byId(key) == null)
             throw new MissingResourceException("Failed to find BlockData!", blockId.namespace(), blockId.key());
-        return new IrisCustomData(B.getAir(), ExternalDataSVC.buildState(blockId, state));
+        return IrisCustomData.of(B.getAir(), ExternalDataSVC.buildState(blockId, state));
     }
 
     @Override
