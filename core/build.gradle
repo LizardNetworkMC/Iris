@@ -34,8 +34,16 @@ compileJava {
 }
 
 repositories {
-    maven { url 'https://nexus.phoenixdevt.fr/repository/maven-public/'}
-    maven { url 'https://repo.auxilor.io/repository/maven-public/' }
+    maven {
+        url 'https://nexus.phoenixdevt.fr/repository/maven-public/'
+        content {
+            includeGroup "com.ticxo.playeranimator"
+            includeGroup "com.github.LoneDev6"
+            includeGroup "com.github.PlaceholderAPI"
+            includeGroup "com.github.Ssomar-Developement"
+            includeGroup "net.Indyuce"
+        }
+    }
 }
 
 /**
@@ -62,7 +70,7 @@ dependencies {
 
     // Third Party Integrations
     compileOnly 'com.ticxo.playeranimator:PlayerAnimator:R1.2.7'
-    compileOnly 'com.nexomc:nexo:0.6.0-dev.0'
+    compileOnly 'com.nexomc:nexo:0.6.0'
     compileOnly 'com.github.LoneDev6:api-itemsadder:3.4.1-r4'
     compileOnly 'com.github.PlaceholderAPI:placeholderapi:2.11.3'
     compileOnly 'com.github.Ssomar-Developement:SCore:4.23.10.8'

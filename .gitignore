@@ -1,13 +1,11 @@
-
+.agents/
+.gradle/
+.idea/
+collection/
 build/
 libs/
-
-.gradle/
-
-.idea/
-
-.DS_Store
-
-collection/
+nms/
 
 /core/src/main/java/com/volmit/iris/util/uniques/
+
+.DS_Store

@@ -1,0 +1,27 @@
+{
+    "lsp": {
+        "jdtls": {
+            "settings": {
+                "java_home": "/opt/java/openjdk",
+                "lombok_support": true,
+                "initialization_options": {
+                    "settings": {
+                        "java": {
+                            "configuration": {
+                                "updateBuildConfiguration": "interactive"
+                            },
+                            "autobuild": {
+                                "enabled": false
+                            },
+                            "import": {
+                                "gradle": {
+                                    "enabled": true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

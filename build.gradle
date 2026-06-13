@@ -18,7 +18,16 @@
 
 buildscript() {
     repositories {
-        maven { url 'https://jitpack.io'}
+        mavenCentral()
+        maven {
+            url 'https://jitpack.io'
+            content {
+                includeGroupByRegex "com[.]github[.]VolmitSoftware([.].*)?"
+            }
+        }
+    }
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
     }
     dependencies {
         classpath 'com.github.VolmitSoftware:NMSTools:1.0.1'
@@ -31,7 +40,6 @@ plugins {
     id "io.github.goooler.shadow" version "8.1.7"
     id "de.undercouch.download" version "5.0.1"
 }
-
 
 version '3.5.9-1.19.2-1.21.4'
 
@@ -109,20 +117,91 @@ configurations.configureEach {
 allprojects {
     apply plugin: 'java'
 
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+
     repositories {
         mavenCentral()
-        maven { url "https://repo.papermc.io/repository/maven-public/" }
-        maven { url "https://repo.codemc.org/repository/maven-public" }
-        maven { url "https://mvn.lumine.io/repository/maven-public/" }
-        maven { url "https://jitpack.io" }
+        maven {
+            url "https://repo.papermc.io/repository/maven-public/"
+            content {
+                includeGroup "io.papermc"
+                includeGroup "org.spigotmc"
+            }
+        }
+        maven {
+            url "https://repo.codemc.org/repository/maven-public"
+            content {
+                includeGroup "com.dfsek"
+                includeGroup "org.bstats"
+                includeGroup "com.github.PlaceholderAPI"
+            }
+        }
+        maven {
+            url "https://mvn.lumine.io/repository/maven-public/"
+            content {
+                includeGroup "io.lumine"
+                includeGroup "net.Indyuce"
+            }
+        }
+        maven {
+            url "https://jitpack.io"
+            content {
+                includeGroupByRegex "com[.]github([.].*)?"
+                includeGroup "com.willfp"
+            }
+        }
 
-        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots" }
-        maven { url "https://mvn.lumine.io/repository/maven/" }
-        maven { url "https://repo.triumphteam.dev/snapshots" }
-        maven { url "https://repo.mineinabyss.com/releases" }
-        maven { url 'https://hub.jeff-media.com/nexus/repository/jeff-media-public/' }
-        maven { url "https://repo.nexomc.com/snapshots/" }
-        maven { url "https://libraries.minecraft.net" }
+        maven {
+            url "https://s01.oss.sonatype.org/content/repositories/snapshots"
+            mavenContent {
+                snapshotsOnly()
+            }
+        }
+        maven {
+            url "https://mvn.lumine.io/repository/maven/"
+            content {
+                includeGroup "io.lumine"
+                includeGroup "net.Indyuce"
+            }
+        }
+        maven {
+            url "https://repo.triumphteam.dev/snapshots"
+            mavenContent {
+                snapshotsOnly()
+            }
+        }
+        maven {
+            url "https://repo.mineinabyss.com/releases"
+            mavenContent {
+                releasesOnly()
+            }
+        }
+        maven {
+            url "https://repo.nexomc.com/releases/"
+            mavenContent {
+                releasesOnly()
+            }
+            content {
+                includeGroup "com.nexomc"
+            }
+        }
+        maven {
+            url "https://repo.nexomc.com/snapshots/"
+            mavenContent {
+                snapshotsOnly()
+            }
+            content {
+                includeGroup "com.nexomc"
+            }
+        }
+        maven {
+            url "https://libraries.minecraft.net"
+            content {
+                includeGroup "com.mojang"
+            }
+        }
     }
 
     dependencies {
