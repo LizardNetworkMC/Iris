@@ -61,6 +61,8 @@ public class MultiverseCoreLink {
 
         world.setAutoLoad(false);
         if (!generator.equals(world.getGenerator())) {
+            // Multiverse's public API does not expose setGenerator() on MultiverseWorld.
+            // Reflection is the only way to update the generator in the world config.
             var field = MultiverseWorld.class.getDeclaredField("worldConfig");
             field.setAccessible(true);
 

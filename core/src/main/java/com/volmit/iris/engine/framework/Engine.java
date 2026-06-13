@@ -20,6 +20,7 @@
  *  - 2025-01-23 @xIRoXaSx: Added vanilla loot generation option.
  *  - 2025-01-30 @xIRoXaSx: Modifiactions to use a random matching fallback loot table
  *                          if vanilla loot table could not be found.
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine.framework;
@@ -35,7 +36,6 @@ import com.volmit.iris.core.loader.IrisRegistrant;
 import com.volmit.iris.core.nms.container.BlockPos;
 import com.volmit.iris.core.nms.container.Pair;
 import com.volmit.iris.core.pregenerator.ChunkUpdater;
-import com.volmit.iris.core.scripting.environment.EngineEnvironment;
 import com.volmit.iris.core.service.ExternalDataSVC;
 import com.volmit.iris.engine.IrisComplex;
 import com.volmit.iris.engine.data.cache.Cache;
@@ -119,8 +119,6 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
     void close();
 
     IrisContext getContext();
-
-    EngineEnvironment getExecution();
 
     double getMaxBiomeObjectDensity();
 
@@ -363,16 +361,6 @@ public interface Engine extends DataProvider, Fallible, LootProvider, BlockUpdat
                     chunk.deleteSlices(MatterUpdate.class);
                     getMetrics().getUpdates().put(p.getMilliseconds());
                 }, RNG.r.i(1, 20))); //Why is there a random delay here?
-            });
-
-            chunk.raiseFlagUnchecked(MantleFlag.SCRIPT, () -> {
-                var scripts = getDimension().getChunkUpdateScripts();
-                if (scripts == null || scripts.isEmpty())
-                    return;
-
-                for (var script : scripts) {
-                    getExecution().updateChunk(script, chunk, c, (delay, task) -> run(semaphore, task, delay));
-                }
             });
 
             try {

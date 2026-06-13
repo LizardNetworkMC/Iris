@@ -41,6 +41,8 @@ public class WorldEditLink {
         if (!hasWorldEdit())
             return null;
 
+        // WorldEdit is an optional runtime dependency not on the compile classpath.
+        // Reflection with hardcoded class names is the standard Bukkit soft-dependency pattern here.
         try {
             Object instance = Class.forName("com.sk89q.worldedit.WorldEdit").getDeclaredMethod("getInstance").invoke(null);
             Object sessionManager = instance.getClass().getDeclaredMethod("getSessionManager").invoke(instance);

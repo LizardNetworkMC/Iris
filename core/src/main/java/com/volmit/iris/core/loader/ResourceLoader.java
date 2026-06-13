@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added canonical-path validation in findFile() to block path traversal.
  */
 
 package com.volmit.iris.core.loader;
@@ -109,16 +112,28 @@ public class ResourceLoader<T extends IrisRegistrant> implements MeteredCache {
 
     public File findFile(String name) {
         for (File i : getFolders(name)) {
-            for (File j : i.listFiles()) {
-                if (j.isFile() && j.getName().endsWith(".json") && j.getName().split("\\Q.\\E")[0].equals(name)) {
-                    return j;
+            try {
+                String root = i.getCanonicalPath() + File.separator;
+                for (File j : i.listFiles()) {
+                    if (j.isFile() && j.getName().endsWith(".json") && j.getName().split("\\Q.\\E")[0].equals(name)) {
+                        if (!j.getCanonicalPath().startsWith(root)) {
+                            Iris.warn("Path traversal attempt blocked: " + j.getPath());
+                            continue;
+                        }
+                        return j;
+                    }
                 }
-            }
 
-            File file = new File(i, name + ".json");
-
-            if (file.exists()) {
-                return file;
+                File file = new File(i, name + ".json");
+                if (file.exists()) {
+                    if (!file.getCanonicalPath().startsWith(root)) {
+                        Iris.warn("Path traversal attempt blocked: " + file.getPath());
+                        continue;
+                    }
+                    return file;
+                }
+            } catch (IOException e) {
+                Iris.warn("Could not resolve canonical path in " + i.getPath() + ": " + e.getMessage());
             }
         }
 

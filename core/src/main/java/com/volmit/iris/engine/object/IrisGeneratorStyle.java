@@ -14,11 +14,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine.object;
 
-import com.volmit.iris.Iris;
 import com.volmit.iris.core.loader.IrisData;
 import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.object.annotations.*;
@@ -26,7 +28,6 @@ import com.volmit.iris.util.math.RNG;
 import com.volmit.iris.util.noise.CNG;
 import com.volmit.iris.util.noise.ExpressionNoise;
 import com.volmit.iris.util.noise.ImageNoise;
-import com.volmit.iris.util.noise.NoiseGenerator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -58,9 +59,6 @@ public class IrisGeneratorStyle {
     private String expression = null;
     @Desc("Use an Image map instead of a generated value")
     private IrisImageMap imageMap = null;
-    @Desc("Instead of using the style property, use a custom noise generator to represent this style.\nFile extension: .noise.kts")
-    @RegistryListResource(IrisScript.class)
-    private String script = null;
     @MinNumber(0.00001)
     @Desc("The Output multiplier. Only used if parent is fracture.")
     private double multiplier = 1;
@@ -106,12 +104,6 @@ public class IrisGeneratorStyle {
             }
         } else if (getImageMap() != null) {
             cng = new CNG(rng, new ImageNoise(data, getImageMap()), 1D, 1).bake();
-        } else if (getScript() != null) {
-            Object result = data.getEnvironment().createNoise(getScript(), rng);
-            if (result == null) Iris.warn("Failed to create noise from script: " + getScript());
-            if (result instanceof NoiseGenerator generator) {
-                cng = new CNG(rng, generator, 1D, 1).bake();
-            }
         }
 
         if (cng == null) {

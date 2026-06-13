@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine.object;
@@ -21,7 +24,6 @@ package com.volmit.iris.engine.object;
 import com.volmit.iris.engine.framework.Engine;
 import com.volmit.iris.engine.framework.EngineMode;
 import com.volmit.iris.engine.object.annotations.Desc;
-import com.volmit.iris.engine.object.annotations.RegistryListResource;
 import com.volmit.iris.engine.object.annotations.Snippet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,19 +40,7 @@ public class IrisDimensionMode {
     @Desc("The dimension type")
     private IrisDimensionModeType type = IrisDimensionModeType.OVERWORLD;
 
-    @RegistryListResource(IrisScript.class)
-    @Desc("The script to create the dimension mode instead of using provided types\nFile extension: .engine.kts")
-    private String script;
-
     public EngineMode create(Engine engine) {
-        if (script == null) {
-            return type.create(engine);
-        }
-        Object result = engine.getExecution().evaluate(script);
-        if (result instanceof EngineMode) {
-            return (EngineMode) result;
-        }
-
-        throw new IllegalStateException("The script '" + script + "' did not return an engine mode!");
+        return type.create(engine);
     }
 }

@@ -14,17 +14,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.core.loader;
 
 import com.google.gson.GsonBuilder;
 import com.volmit.iris.Iris;
-import com.volmit.iris.engine.object.IrisScript;
-import com.volmit.iris.engine.object.annotations.ArrayType;
-import com.volmit.iris.engine.object.annotations.Desc;
-import com.volmit.iris.engine.object.annotations.RegistryListResource;
-import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.json.JSONObject;
 import com.volmit.iris.util.plugin.VolmitSender;
 import lombok.Data;
@@ -35,11 +33,6 @@ import java.io.File;
 
 @Data
 public abstract class IrisRegistrant {
-    @Desc("Preprocess this object in-memory when it's loaded, run scripts using the variable 'object' and modify properties about this object before it's used.\nFile extension: .proc.kts")
-    @RegistryListResource(IrisScript.class)
-    @ArrayType(min = 1, type = String.class)
-    private KList<String> preprocessors = new KList<>();
-
     @EqualsAndHashCode.Exclude
     private transient IrisData loader;
 

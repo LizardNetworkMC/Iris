@@ -1,3 +1,24 @@
+/*
+ * Iris is a World Generator for Minecraft Bukkit Servers
+ * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added documentation clarifying agent purpose (NMS hooks, not scripting).
+ */
+
 package com.volmit.iris.util.agent;
 
 import com.volmit.iris.Iris;
@@ -9,6 +30,15 @@ import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * Provides JVM Instrumentation for Iris's NMS hooks.
+ *
+ * At plugin startup, Iris uses ByteBuddy to redefine Minecraft's ServerLevel,
+ * ChunkAccess and ProtoChunk classes so it can intercept chunk generation calls
+ * that the Paper/Spigot API does not otherwise expose. The agent JAR is bundled
+ * inside the plugin resources (not downloaded from the network) and is attached
+ * once per JVM process via {@link #install()}.
+ */
 public class Agent {
     private static final String NAME = "com.volmit.iris.util.agent.Installer";
     public static final File AGENT_JAR = new File(Iris.instance.getDataFolder(), "agent.jar");

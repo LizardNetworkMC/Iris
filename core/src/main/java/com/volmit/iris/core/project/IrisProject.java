@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Gradle runtime download/execution and scripting environment config.
  */
 
 package com.volmit.iris.core.project;
@@ -354,7 +357,6 @@ public class IrisProject {
         settings.put("json.schemas", schemas);
         ws.put("settings", settings);
 
-        dm.getEnvironment().configureProject();
         File schemasFile = new File(path, ".idea" + File.separator + "jsonSchemas.xml");
         Document doc = IO.read(schemasFile);
         Element mappings = (Element) doc.selectSingleNode("//component[@name='JsonSchemaMappingsProjectConfiguration']");
@@ -420,7 +422,6 @@ public class IrisProject {
         if (!schemaMap.isEmpty()) {
             IO.write(schemasFile, doc);
         }
-        Gradle.wrapper(path);
 
         return ws;
     }

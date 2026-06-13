@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.core.loader;
@@ -24,7 +27,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import com.volmit.iris.Iris;
-import com.volmit.iris.core.scripting.environment.PackEnvironment;
 import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.framework.Engine;
 import com.volmit.iris.engine.object.*;
@@ -32,8 +34,6 @@ import com.volmit.iris.engine.object.annotations.Snippet;
 import com.volmit.iris.engine.object.matter.IrisMatterObject;
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.collection.KMap;
-import com.volmit.iris.util.context.IrisContext;
-import com.volmit.iris.util.format.C;
 import com.volmit.iris.util.mantle.flag.MantleFlagAdapter;
 import com.volmit.iris.util.mantle.flag.MantleFlag;
 import com.volmit.iris.util.math.RNG;
@@ -58,7 +58,6 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
     private final File dataFolder;
     private final int id;
     private boolean closed = false;
-    private PackEnvironment environment;
     private ResourceLoader<IrisBiome> biomeLoader;
     private ResourceLoader<IrisLootTable> lootLoader;
     private ResourceLoader<IrisRegion> regionLoader;
@@ -76,7 +75,6 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
     private ResourceLoader<IrisObject> objectLoader;
     private ResourceLoader<IrisMatterObject> matterLoader;
     private ResourceLoader<IrisImage> imageLoader;
-    private ResourceLoader<IrisScript> scriptLoader;
     private ResourceLoader<IrisCave> caveLoader;
     private ResourceLoader<IrisRavine> ravineLoader;
     private ResourceLoader<IrisMatterObject> matterObjectLoader;
@@ -163,10 +161,6 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
 
     public static IrisSpawner loadAnySpaner(String key, @Nullable IrisData nearest) {
         return loadAny(IrisSpawner.class, key, nearest);
-    }
-
-    public static IrisScript loadAnyScript(String key, @Nullable IrisData nearest) {
-        return loadAny(IrisScript.class, key, nearest);
     }
 
     public static IrisRavine loadAnyRavine(String key, @Nullable IrisData nearest) {
@@ -262,45 +256,8 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
     }
 
     public void preprocessObject(IrisRegistrant t) {
-        try {
-            IrisContext ctx = IrisContext.get();
-            Engine engine = this.engine;
-
-            if (engine == null && ctx != null && ctx.getEngine() != null) {
-                engine = ctx.getEngine();
-            }
-
-            if (engine == null && t.getPreprocessors().isNotEmpty()) {
-                Iris.error("Failed to preprocess object " + t.getLoadKey() + " because there is no engine context here. (See stack below)");
-                try {
-                    throw new RuntimeException();
-                } catch (Throwable ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            if (engine == null) return;
-            var global = engine.getDimension().getPreProcessors(t.getFolderName());
-            var local = t.getPreprocessors();
-            if ((global != null && global.isNotEmpty()) || local.isNotEmpty()) {
-                synchronized (this) {
-                    if (global != null) {
-                        for (String i : global) {
-                            engine.getExecution().preprocessObject(i, t);
-                            Iris.debug("Loader<" + C.GREEN + t.getTypeName() + C.LIGHT_PURPLE + "> iprocess " + C.YELLOW + t.getLoadKey() + C.LIGHT_PURPLE + " in <rainbow>" + i);
-                        }
-                    }
-
-                    for (String i : local) {
-                        engine.getExecution().preprocessObject(i, t);
-                        Iris.debug("Loader<" + C.GREEN + t.getTypeName() + C.LIGHT_PURPLE + "> iprocess " + C.YELLOW + t.getLoadKey() + C.LIGHT_PURPLE + " in <rainbow>" + i);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            Iris.error("Failed to preprocess object!");
-            e.printStackTrace();
-        }
+        // Kotlin scripting preprocessors removed (security: packs must not execute arbitrary code).
+        Iris.debug("preprocessObject called for " + t.getClass().getSimpleName() + " - scripting hooks removed for security (packs must not execute arbitrary code)");
     }
 
     public void close() {
@@ -322,9 +279,6 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
                         rr.getTypeName());
             } else if (registrant.equals(IrisMatterObject.class)) {
                 r = (ResourceLoader<T>) new MatterObjectResourceLoader(dataFolder, this, rr.getFolderName(),
-                        rr.getTypeName());
-            } else if (registrant.equals(IrisScript.class)) {
-                r = (ResourceLoader<T>) new ScriptResourceLoader(dataFolder, this, rr.getFolderName(),
                         rr.getTypeName());
             } else if (registrant.equals(IrisImage.class)) {
                 r = (ResourceLoader<T>) new ImageResourceLoader(dataFolder, this, rr.getFolderName(),
@@ -377,16 +331,10 @@ public class IrisData implements ExclusionStrategy, TypeAdapterFactory {
         this.expressionLoader = registerLoader(IrisExpression.class);
         this.objectLoader = registerLoader(IrisObject.class);
         this.imageLoader = registerLoader(IrisImage.class);
-        this.scriptLoader = registerLoader(IrisScript.class);
         this.matterObjectLoader = registerLoader(IrisMatterObject.class);
-        this.environment = PackEnvironment.create(this);
         builder.registerTypeAdapterFactory(KeyedType::createTypeAdapter);
 
         gson = builder.create();
-        dimensionLoader.streamAll()
-                .map(IrisDimension::getDataScripts)
-                .flatMap(KList::stream)
-                .forEach(environment::execute);
 
         if (engine != null) {
             engine.hotload();

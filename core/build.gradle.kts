@@ -18,6 +18,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-131 Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 plugins {
@@ -93,13 +96,8 @@ dependencies {
     implementation(libs.dom4j)
     implementation(libs.jaxen)
 
-    // Script Engine
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlin.coroutines)
-    implementation(libs.kotlin.scripting.common)
-    implementation(libs.kotlin.scripting.jvm)
-    implementation(libs.kotlin.scripting.jvm.host)
-    implementation(libs.kotlin.scripting.dependencies)
 }
 
 java {

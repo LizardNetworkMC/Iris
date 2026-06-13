@@ -14,10 +14,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
+ *                          Retained .kts/.gradle.kts detection to warn if a pack ships script files.
  */
 
 package com.volmit.iris.util.io;
 
+import com.volmit.iris.Iris;
 import com.volmit.iris.util.collection.KList;
 import com.volmit.iris.util.function.Consumer3;
 
@@ -46,11 +51,16 @@ public class ReactiveFolder {
 
         if (checkCycle % 3 == 0 ? fw.checkModified() : fw.checkModifiedFast()) {
             for (File i : fw.getCreated()) {
-                if (i.getName().endsWith(".iob") || i.getName().endsWith(".json") || i.getName().endsWith(".kts")) {
-                    if (i.getPath().contains(".iris") || i.getName().endsWith(".gradle.kts")) {
-                        continue;
-                    }
+                if (i.getPath().contains(".iris")) {
+                    continue;
+                }
 
+                if (i.getName().endsWith(".kts") || i.getName().endsWith(".gradle.kts")) {
+                    Iris.warn("Script file detected in pack but scripting is disabled (security): " + i.getPath());
+                    continue;
+                }
+
+                if (i.getName().endsWith(".iob") || i.getName().endsWith(".json")) {
                     modified = true;
                     break;
                 }
@@ -58,11 +68,16 @@ public class ReactiveFolder {
 
             if (!modified) {
                 for (File i : fw.getChanged()) {
-                    if (i.getPath().contains(".iris") || i.getName().endsWith(".gradle.kts")) {
+                    if (i.getPath().contains(".iris")) {
                         continue;
                     }
 
-                    if (i.getName().endsWith(".iob") || i.getName().endsWith(".json") || i.getName().endsWith(".kts")) {
+                    if (i.getName().endsWith(".kts") || i.getName().endsWith(".gradle.kts")) {
+                        Iris.warn("Script file detected in pack but scripting is disabled (security): " + i.getPath());
+                        continue;
+                    }
+
+                    if (i.getName().endsWith(".iob") || i.getName().endsWith(".json")) {
                         modified = true;
                         break;
                     }
@@ -71,11 +86,16 @@ public class ReactiveFolder {
 
             if (!modified) {
                 for (File i : fw.getDeleted()) {
-                    if (i.getPath().contains(".iris") || i.getName().endsWith(".gradle.kts")) {
+                    if (i.getPath().contains(".iris")) {
                         continue;
                     }
 
-                    if (i.getName().endsWith(".iob") || i.getName().endsWith(".json") || i.getName().endsWith(".kts")) {
+                    if (i.getName().endsWith(".kts") || i.getName().endsWith(".gradle.kts")) {
+                        Iris.warn("Script file detected in pack but scripting is disabled (security): " + i.getPath());
+                        continue;
+                    }
+
+                    if (i.getName().endsWith(".iob") || i.getName().endsWith(".json")) {
                         modified = true;
                         break;
                     }

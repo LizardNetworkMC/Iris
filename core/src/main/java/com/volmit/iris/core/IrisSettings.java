@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added useVanillaStructureLootSystem.
+ *  - 2026-06-13 @xIRoXaSx: Changed pluginMetrics default to false (opt-out telemetry).
  */
 
 package com.volmit.iris.core;
@@ -160,7 +161,7 @@ public class IrisSettings {
     @Data
     public static class IrisSettingsPerformance {
         private IrisSettingsEngineSVC engineSVC = new IrisSettingsEngineSVC();
-        public boolean trimMantleInStudio = false; 
+        public boolean trimMantleInStudio = false;
         public int mantleKeepAlive = 30;
         public int noiseCacheSize = 1_024;
         public int resourceLoaderCacheSize = 1_024;
@@ -215,7 +216,7 @@ public class IrisSettings {
         public boolean debug = false;
         public boolean dumpMantleOnError = false;
         public boolean disableNMS = false;
-        public boolean pluginMetrics = true;
+        public boolean pluginMetrics = false;
         public boolean splashLogoStartup = true;
         public boolean useConsoleCustomColors = true;
         public boolean useCustomColorsIngame = true;

@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added 512 MB decompression cap to prevent zip-bomb DoS.
  */
 
 package com.volmit.iris.util.io;
@@ -92,11 +95,13 @@ public class IO {
         LINE_SEPARATOR = buf.toString();
     }
 
+    private static final long MAX_DECOMPRESS_BYTES = 512L * 1024 * 1024; // 512 MB guard against zip bombs
+
     public static String decompress(String gz) throws IOException {
         ByteArrayInputStream bin = new ByteArrayInputStream(Base64.getUrlDecoder().decode(gz));
         GZIPInputStream gzi = new GZIPInputStream(bin);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
-        IO.fullTransfer(gzi, boas, 256);
+        transferBounded(gzi, boas);
         gzi.close();
 
         return boas.toString();
@@ -106,10 +111,23 @@ public class IO {
         ByteArrayInputStream bin = new ByteArrayInputStream(Base64.getUrlDecoder().decode(compressed));
         GZIPInputStream gzi = new GZIPInputStream(bin);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
-        IO.fullTransfer(gzi, boas, 256);
+        transferBounded(gzi, boas);
         gzi.close();
 
         return boas.toByteArray();
+    }
+
+    private static void transferBounded(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[8192];
+        long total = 0;
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            total += n;
+            if (total > MAX_DECOMPRESS_BYTES) {
+                throw new IOException("Decompressed data exceeds limit of " + MAX_DECOMPRESS_BYTES + " bytes");
+            }
+            out.write(buf, 0, n);
+        }
     }
 
     public static String encode(byte[] data) {

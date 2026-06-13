@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine;
@@ -28,7 +31,6 @@ import com.volmit.iris.core.loader.ResourceLoader;
 import com.volmit.iris.core.nms.container.BlockPos;
 import com.volmit.iris.core.nms.container.Pair;
 import com.volmit.iris.core.project.IrisProject;
-import com.volmit.iris.core.scripting.environment.EngineEnvironment;
 import com.volmit.iris.core.service.PreservationSVC;
 import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.framework.*;
@@ -94,7 +96,6 @@ public class IrisEngine implements Engine {
     private CompletableFuture<Long> hash32;
     private EngineMode mode;
     private EngineEffects effects;
-    private EngineEnvironment execution;
     private EngineWorldManager worldManager;
     private volatile int parallelism;
     private boolean failing;
@@ -125,7 +126,6 @@ public class IrisEngine implements Engine {
         mantle = new IrisEngineMantle(this);
         context = new IrisContext(this);
         cleaning = new AtomicBoolean(false);
-        execution = getData().getEnvironment().with(this);
         if (studio) {
             getData().dump();
             getData().clearLists();
@@ -139,6 +139,7 @@ public class IrisEngine implements Engine {
         closed = false;
         art = J.ar(this::tickRandomPlayer, 0);
         setupEngine();
+
         Iris.debug("Engine Initialized " + getCacheID());
     }
 
@@ -165,7 +166,6 @@ public class IrisEngine implements Engine {
         complex.close();
         effects.close();
         mode.close();
-        execution = getData().getEnvironment().with(this);
 
         J.a(() -> new IrisProject(getData().getDataFolder()).updateWorkspace());
     }
@@ -180,7 +180,6 @@ public class IrisEngine implements Engine {
             hash32 = new CompletableFuture<>();
             mantle.hotload();
             setupMode();
-            getDimension().getEngineScripts().forEach(execution::execute);
             J.a(this::computeBiomeMaxes);
             J.a(() -> {
                 File[] roots = getData().getLoaders()

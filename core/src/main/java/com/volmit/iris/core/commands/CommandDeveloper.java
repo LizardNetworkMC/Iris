@@ -17,6 +17,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2026-06-13 @xIRoXaSx: Refactored engine status command to delegate to IrisEngineSVC.
+ *  - 2026-06-13 @xIRoXaSx: Removed network() command (no host network interface scanning).
  */
 
 package com.volmit.iris.core.commands;
@@ -68,8 +69,6 @@ import org.bukkit.Chunk;
 import org.bukkit.World;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -470,22 +469,6 @@ public class CommandDeveloper implements DecreeExecutor {
         }
         burst.complete();
         sender.sendMessage(C.RED + "Failed to load " + failed.get() + " of " + keys.length + " objects");
-    }
-
-    @Decree(description = "Test", aliases = {"ip"})
-    public void network() {
-        try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            for (NetworkInterface ni : Collections.list(networkInterfaces)) {
-                Iris.info("Display Name: %s", ni.getDisplayName());
-                Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
-                for (InetAddress ia : Collections.list(inetAddresses)) {
-                    Iris.info("IP: %s", ia.getHostAddress());
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     @Decree(description = "Test the compression algorithms")

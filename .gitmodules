@@ -1,3 +1,6 @@
 [submodule "mod/pack/overworld"]
 	path = mod/pack/overworld
 	url = git@github.com:LizardNetworkMC/overworld.git
+[submodule "mod/_listing"]
+	path = mod/_listing
+	url = git@github.com:LizardNetworkMC/_listing.git

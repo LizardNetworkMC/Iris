@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Removed Overworld tag.
+ *  - 2026-06-13 @xIRoXaSx: Added HTTPS-only enforcement and SHA-256 post-download verification helpers.
  */
 
 package com.volmit.iris;
@@ -189,11 +190,32 @@ public class Iris extends VolmitPlugin implements Listener {
         }
     }
 
+    public static void verifyDownload(File file, String expectedSha256) throws IOException {
+        String actual = IO.hash(file);
+        if (!actual.equalsIgnoreCase(expectedSha256)) {
+            file.delete();
+            throw new IOException("SHA-256 mismatch for " + file.getName()
+                    + ": expected " + expectedSha256 + " but got " + actual);
+        }
+    }
+
+    private static void enforceHttps(String url) throws IOException {
+        if (!url.startsWith("https://")) {
+            throw new IOException("Insecure download URL rejected (must use HTTPS): " + url);
+        }
+    }
+
     public static File getCached(String name, String url) {
         String h = IO.hash(name + "@" + url);
         File f = Iris.instance.getDataFile("cache", h.substring(0, 2), h.substring(3, 5), h);
 
         if (!f.exists()) {
+            try {
+                enforceHttps(url);
+            } catch (IOException e) {
+                Iris.error(e.getMessage());
+                return null;
+            }
             try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream()); FileOutputStream fileOutputStream = new FileOutputStream(f)) {
                 byte[] dataBuffer = new byte[1024];
                 int bytesRead;

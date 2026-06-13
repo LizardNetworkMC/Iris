@@ -19,6 +19,7 @@
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Refactored method to use centralized constants for the Iris pack.
  *                          Added callback to install datapacks for studio worlds.
+ *  - 2026-06-13 @xIRoXaSx: Updated LISTING URL to fork-controlled LizardNetworkMC/_listing endpoint.
  */
 
 package com.volmit.iris.core.service;
@@ -55,7 +56,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class StudioSVC implements IrisService {
-    public static final String LISTING = "https://raw.githubusercontent.com/IrisDimensions/_listing/main/listing-v2.json";
+    public static final String LISTING = "https://raw.githubusercontent.com/LizardNetworkMC/_listing/main/listing-v2.json";
     public static final String WORKSPACE_NAME = "packs";
     private static final AtomicCache<Integer> counter = new AtomicCache<>();
     private final KMap<String, String> cacheListing = null;
@@ -200,6 +201,28 @@ public class StudioSVC implements IrisService {
             Iris.reportError(e);
             e.printStackTrace();
             sender.sendMessage(String.format("Failed to download '%s' from %s.", GitHub.getDimensionPackRepo(), url));
+        }
+    }
+
+    public void downloadDefaultPack(VolmitSender sender, boolean trim, boolean forceOverwrite) {
+        String archiveUrl = GitHub.getDimensionPackArchiveUrl();
+        try {
+            File zip = Iris.getNonCachedFile("default-pack", archiveUrl);
+            if (zip == null || !zip.exists()) {
+                sender.sendMessage("Failed to download the default pack from " + archiveUrl);
+                return;
+            }
+
+            if (GitHub.hasSHA256()) {
+                Iris.verifyDownload(zip, GitHub.getDimensionPackSHA256());
+                sender.sendMessage("SHA-256 verified for default pack.");
+            } else {
+                Iris.warn("No SHA-256 hash configured for the default pack - skipping integrity check.");
+            }
+            download(sender, GitHub.getDimensionPackOrganization(), archiveUrl, trim, forceOverwrite, true);
+        } catch (IOException e) {
+            Iris.reportError(e);
+            sender.sendMessage("Default pack download/verification failed: " + e.getMessage());
         }
     }
 

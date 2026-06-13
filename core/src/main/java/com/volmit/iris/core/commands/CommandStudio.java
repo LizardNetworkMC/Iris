@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added location variable.
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.core.commands;
@@ -242,14 +243,6 @@ public class CommandStudio implements DecreeExecutor {
     public void convert() {
         Iris.service(ConversionSVC.class).check(sender());
         //IrisConverter.convertSchematics(sender());
-    }
-
-    @Decree(description = "Execute a script", aliases = "run", origin = DecreeOrigin.PLAYER)
-    public void execute(
-            @Param(description = "The script to run")
-            IrisScript script
-    ) {
-        engine().getExecution().execute(script.getLoadKey());
     }
 
     @Decree(description = "Open the noise explorer (External GUI)", aliases = {"nmap", "n"})
