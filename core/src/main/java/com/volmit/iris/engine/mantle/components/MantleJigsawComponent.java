@@ -19,6 +19,7 @@
 package com.volmit.iris.engine.mantle.components;
 
 import com.volmit.iris.engine.jigsaw.PlannedStructure;
+import com.volmit.iris.engine.mantle.ComponentFlag;
 import com.volmit.iris.engine.mantle.EngineMantle;
 import com.volmit.iris.engine.mantle.IrisMantleComponent;
 import com.volmit.iris.engine.mantle.MantleWriter;
@@ -29,23 +30,21 @@ import com.volmit.iris.util.collection.KSet;
 import com.volmit.iris.util.context.ChunkContext;
 import com.volmit.iris.util.documentation.BlockCoordinates;
 import com.volmit.iris.util.documentation.ChunkCoordinates;
-import com.volmit.iris.util.mantle.MantleFlag;
+import com.volmit.iris.util.mantle.flag.ReservedFlag;
 import com.volmit.iris.util.math.Position2;
 import com.volmit.iris.util.math.RNG;
 import com.volmit.iris.util.matter.slices.container.JigsawStructuresContainer;
 import com.volmit.iris.util.noise.CNG;
-import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+@ComponentFlag(ReservedFlag.JIGSAW)
 public class MantleJigsawComponent extends IrisMantleComponent {
-    @Getter
-    private final int radius = computeRadius();
     private final CNG cng;
 
     public MantleJigsawComponent(EngineMantle engineMantle) {
-        super(engineMantle, MantleFlag.JIGSAW, 1);
+        super(engineMantle, ReservedFlag.JIGSAW, 1);
         cng = NoiseStyle.STATIC.create(new RNG(jigsaw()));
     }
 
@@ -90,8 +89,10 @@ public class MantleJigsawComponent extends IrisMantleComponent {
     private boolean placeStructures(MantleWriter writer, long seed, int x, int z, KList<IrisJigsawStructurePlacement> structures,
             KSet<Position2> cachedRegions, KMap<String, KSet<Position2>> cache, KMap<Position2, Double> distanceCache) {
         IrisJigsawStructurePlacement i = pick(structures, seed, x, z);
-        if (i == null || checkMinDistances(i.collectMinDistances(), x, z, cachedRegions, cache, distanceCache))
-            return false;
+        try {
+            if (i == null || checkMinDistances(i.collectMinDistances(), x, z, cachedRegions, cache, distanceCache))
+                return false;
+        } catch (Throwable ignored) {}
         RNG rng = new RNG(seed);
         IrisPosition position = new IrisPosition((x << 4) + rng.nextInt(15), 0, (z << 4) + rng.nextInt(15));
         IrisJigsawStructure structure = getData().getJigsawStructureLoader().load(i.getStructure());
@@ -159,12 +160,13 @@ public class MantleJigsawComponent extends IrisMantleComponent {
     @ChunkCoordinates
     private IrisJigsawStructurePlacement pick(List<IrisJigsawStructurePlacement> structures, long seed, int x, int z) {
         return IRare.pick(structures.stream()
-                .filter(p -> p.shouldPlace(getDimension().getJigsawStructureDivisor(), jigsaw(), x, z))
+                .filter(p -> p.shouldPlace(getData(), getDimension().getJigsawStructureDivisor(), jigsaw(), x, z))
                 .toList(), new RNG(seed).nextDouble());
     }
 
     @BlockCoordinates
     private boolean place(MantleWriter writer, IrisPosition position, IrisJigsawStructure structure, RNG rng, boolean forcePlace) {
+        if (structure == null || structure.getDatapackStructures().isNotEmpty()) return false;
         return new PlannedStructure(structure, position, rng, forcePlace).place(writer, getMantle(), writer.getEngine());
     }
 
@@ -172,10 +174,14 @@ public class MantleJigsawComponent extends IrisMantleComponent {
         return getEngineMantle().getEngine().getSeedManager().getJigsaw();
     }
 
-    private int computeRadius() {
+    protected int computeRadius() {
         var dimension = getDimension();
 
         KSet<String> structures = new KSet<>();
+        if (dimension.getStronghold() != null) {
+            structures.add(dimension.getStronghold());
+        }
+
         for (var placement : dimension.getJigsawStructures()) {
             structures.add(placement.getStructure());
         }

@@ -1,0 +1,3 @@
+[submodule "mod/pack/overworld"]
+	path = mod/pack/overworld
+	url = git@github.com:LizardNetworkMC/overworld.git
