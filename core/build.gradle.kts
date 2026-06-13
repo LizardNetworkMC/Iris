@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Changes (YYYY-MM-DD):
- *  - 2026-06-131 Removed Kotlin scripting system (security: packs must not execute arbitrary code).
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 plugins {
