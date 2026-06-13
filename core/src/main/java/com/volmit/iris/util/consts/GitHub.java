@@ -18,6 +18,7 @@
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Added file.
  *  - 2025-01-30 @xIRoXaSx: Updated dimension pack tag.
+ *  - 2026-06-13 @xIRoXaSx: Added SHA-256 hash constant for default pack integrity verification.
  */
 
 package com.volmit.iris.util.consts;
@@ -25,7 +26,11 @@ package com.volmit.iris.util.consts;
 public class GitHub {
     private static final String dimensionPackName = "overworld";
     private static final String dimensionPackOrganization = "LizardNetworkMC";
-    private static final String dimensionPackTag = "v3.1.1";
+    private static final String dimensionPackTag = "v3.1.2";
+    // SHA-256 of the archive ZIP for dimensionPackTag. Update whenever the tag changes.
+    // Compute with: sha256sum overworld-v3.1.1.zip
+    // Set to empty string to skip verification (not recommended for production).
+    private static final String dimensionPackSHA256 = "";
 
     public static String getDimensionPackName() {
         return dimensionPackName;
@@ -49,5 +54,13 @@ public class GitHub {
 
     public static String getDimensionPackArchiveUrl() {
         return String.format("%s/archive/refs/tags/%s.zip", getDimensionPackBaseUrl(), dimensionPackTag);
+    }
+
+    public static String getDimensionPackSHA256() {
+        return dimensionPackSHA256;
+    }
+
+    public static boolean hasSHA256() {
+        return dimensionPackSHA256 != null && !dimensionPackSHA256.isEmpty();
     }
 }

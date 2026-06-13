@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added headless environment and Desktop API checks before opening files.
  */
 
 package com.volmit.iris.core.commands;
@@ -44,6 +47,16 @@ public class CommandEdit implements DecreeExecutor {
         }
         if (!engine().isStudio()) {
             sender().sendMessage(C.RED + "You must be in a studio world!");
+            return true;
+        }
+
+        if (GraphicsEnvironment.isHeadless()) {
+            sender().sendMessage(C.RED + "Cannot open files in headless environments!");
+            return true;
+        }
+
+        if (!Desktop.isDesktopSupported()) {
+            sender().sendMessage(C.RED + "Desktop is not supported by this environment!");
             return true;
         }
         return false;

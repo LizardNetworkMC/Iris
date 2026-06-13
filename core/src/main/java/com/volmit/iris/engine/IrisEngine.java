@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine;
@@ -33,7 +36,6 @@ import com.volmit.iris.engine.data.cache.AtomicCache;
 import com.volmit.iris.engine.framework.*;
 import com.volmit.iris.engine.mantle.EngineMantle;
 import com.volmit.iris.engine.object.*;
-import com.volmit.iris.engine.scripting.EngineExecutionEnvironment;
 import com.volmit.iris.util.atomics.AtomicRollingSequence;
 import com.volmit.iris.util.collection.KMap;
 import com.volmit.iris.util.context.ChunkContext;
@@ -43,10 +45,11 @@ import com.volmit.iris.util.format.C;
 import com.volmit.iris.util.format.Form;
 import com.volmit.iris.util.hunk.Hunk;
 import com.volmit.iris.util.io.IO;
-import com.volmit.iris.util.mantle.MantleFlag;
+import com.volmit.iris.util.mantle.flag.MantleFlag;
 import com.volmit.iris.util.math.M;
 import com.volmit.iris.util.math.RNG;
 import com.volmit.iris.util.matter.MatterStructurePOI;
+import com.volmit.iris.util.matter.slices.container.JigsawStructureContainer;
 import com.volmit.iris.util.scheduling.ChronoLatch;
 import com.volmit.iris.util.scheduling.J;
 import com.volmit.iris.util.scheduling.PrecisionStopwatch;
@@ -93,10 +96,8 @@ public class IrisEngine implements Engine {
     private CompletableFuture<Long> hash32;
     private EngineMode mode;
     private EngineEffects effects;
-    private EngineExecutionEnvironment execution;
     private EngineWorldManager worldManager;
     private volatile int parallelism;
-    private volatile int minHeight;
     private boolean failing;
     private boolean closed;
     private int cacheId;
@@ -125,15 +126,20 @@ public class IrisEngine implements Engine {
         mantle = new IrisEngineMantle(this);
         context = new IrisContext(this);
         cleaning = new AtomicBoolean(false);
+        if (studio) {
+            getData().dump();
+            getData().clearLists();
+            getTarget().setDimension(getData().getDimensionLoader().load(getDimension().getLoadKey()));
+        }
         context.touch();
         getData().setEngine(this);
         getData().loadPrefetch(this);
         Iris.info("Initializing Engine: " + target.getWorld().name() + "/" + target.getDimension().getLoadKey() + " (" + target.getDimension().getDimensionHeight() + " height) Seed: " + getSeedManager().getSeed());
-        minHeight = 0;
         failing = false;
         closed = false;
         art = J.ar(this::tickRandomPlayer, 0);
         setupEngine();
+
         Iris.debug("Engine Initialized " + getCacheID());
     }
 
@@ -158,7 +164,6 @@ public class IrisEngine implements Engine {
     private void prehotload() {
         worldManager.close();
         complex.close();
-        execution.close();
         effects.close();
         mode.close();
 
@@ -171,16 +176,19 @@ public class IrisEngine implements Engine {
             cacheId = RNG.r.nextInt();
             worldManager = new IrisWorldManager(this);
             complex = new IrisComplex(this);
-            execution = new IrisExecutionEnvironment(this);
             effects = new IrisEngineEffects(this);
             hash32 = new CompletableFuture<>();
+            mantle.hotload();
             setupMode();
             J.a(this::computeBiomeMaxes);
             J.a(() -> {
                 File[] roots = getData().getLoaders()
                         .values()
                         .stream()
-                        .map(ResourceLoader::getRoot)
+                        .map(ResourceLoader::getFolderName)
+                        .map(n -> new File(getData().getDataFolder(), n))
+                        .filter(File::exists)
+                        .filter(File::isDirectory)
                         .toArray(File[]::new);
                 hash32.complete(IO.hashRecursive(roots));
             });
@@ -197,7 +205,7 @@ public class IrisEngine implements Engine {
             mode.close();
         }
 
-        mode = getDimension().getMode().getType().create(this);
+        mode = getDimension().getMode().create(this);
     }
 
     @Override
@@ -220,6 +228,12 @@ public class IrisEngine implements Engine {
     @Override
     public IrisJigsawStructure getStructureAt(int x, int z) {
         return getMantle().getJigsawComponent().guess(x, z);
+    }
+
+    @Override
+    public IrisJigsawStructure getStructureAt(int x, int y, int z) {
+        var container = getMantle().getMantle().get(x, y, z, JigsawStructureContainer.class);
+        return container == null ? null : container.load(getData());
     }
 
     private void warmupChunk(int x, int z) {
@@ -472,7 +486,7 @@ public class IrisEngine implements Engine {
         getEngineData().getStatistics().generatedChunk();
         try {
             PrecisionStopwatch p = PrecisionStopwatch.start();
-            Hunk<BlockData> blocks = vblocks.listen((xx, y, zz, t) -> catchBlockUpdates(x + xx, y + getMinHeight(), z + zz, t));
+            Hunk<BlockData> blocks = vblocks.listen((xx, y, zz, t) -> catchBlockUpdates(x + xx, y, z + zz, t));
 
             if (getDimension().isDebugChunkCrossSections() && ((x >> 4) % getDimension().getDebugCrossSectionsMod() == 0 || (z >> 4) % getDimension().getDebugCrossSectionsMod() == 0)) {
                 for (int i = 0; i < 16; i++) {

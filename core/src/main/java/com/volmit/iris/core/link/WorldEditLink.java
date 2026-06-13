@@ -1,3 +1,25 @@
+/*
+ * Iris is a World Generator for Minecraft Bukkit Servers
+ * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ * Copyright (c) 2025 xIRoXaSx
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added reportError() call after exception logging.
+ */
+
 package com.volmit.iris.core.link;
 
 import com.volmit.iris.Iris;
@@ -19,6 +41,8 @@ public class WorldEditLink {
         if (!hasWorldEdit())
             return null;
 
+        // WorldEdit is an optional runtime dependency not on the compile classpath.
+        // Reflection with hardcoded class names is the standard Bukkit soft-dependency pattern here.
         try {
             Object instance = Class.forName("com.sk89q.worldedit.WorldEdit").getDeclaredMethod("getInstance").invoke(null);
             Object sessionManager = instance.getClass().getDeclaredMethod("getSessionManager").invoke(instance);
@@ -47,6 +71,7 @@ public class WorldEditLink {
         } catch (Throwable e) {
             Iris.error("Could not get selection");
             e.printStackTrace();
+            Iris.reportError(e);
             active.reset();
             active.aquire(() -> false);
         }

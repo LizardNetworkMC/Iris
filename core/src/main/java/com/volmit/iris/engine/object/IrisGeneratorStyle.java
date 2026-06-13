@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine.object;
@@ -93,40 +96,21 @@ public class IrisGeneratorStyle {
     public CNG createNoCache(RNG rng, IrisData data, boolean actuallyCached) {
         String cacheKey = hash() + "";
 
+        CNG cng = null;
         if (getExpression() != null) {
             IrisExpression e = data.getExpressionLoader().load(getExpression());
-
             if (e != null) {
-                CNG cng = new CNG(rng, new ExpressionNoise(rng, e), 1D, 1)
-                        .bake().scale(1D / zoom).pow(exponent).bake();
-                cng.setTrueFracturing(axialFracturing);
-
-                if (fracture != null) {
-                    cng.fractureWith(fracture.create(rng.nextParallelRNG(2934), data), fracture.getMultiplier());
-                }
-
-                if (cellularFrequency > 0) {
-                    return cng.cellularize(rng.nextParallelRNG(884466), cellularFrequency).scale(1D / cellularZoom).bake();
-                }
-
-                return cng;
+                cng = new CNG(rng, new ExpressionNoise(rng, e), 1D, 1).bake();
             }
         } else if (getImageMap() != null) {
-            CNG cng = new CNG(rng, new ImageNoise(data, getImageMap()), 1D, 1).bake().scale(1D / zoom).pow(exponent).bake();
-            cng.setTrueFracturing(axialFracturing);
-
-            if (fracture != null) {
-                cng.fractureWith(fracture.create(rng.nextParallelRNG(2934), data), fracture.getMultiplier());
-            }
-
-            if (cellularFrequency > 0) {
-                return cng.cellularize(rng.nextParallelRNG(884466), cellularFrequency).scale(1D / cellularZoom).bake();
-            }
-
-            return cng;
+            cng = new CNG(rng, new ImageNoise(data, getImageMap()), 1D, 1).bake();
         }
 
-        CNG cng = style.create(rng).bake().scale(1D / zoom).pow(exponent).bake();
+        if (cng == null) {
+            cng = style.create(rng).bake();
+        }
+
+        cng = cng.scale(1D / zoom).pow(exponent).bake();
         cng.setTrueFracturing(axialFracturing);
 
         if (fracture != null) {

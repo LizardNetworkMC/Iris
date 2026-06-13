@@ -88,21 +88,29 @@ public class WorldObjectPlacer implements IObjectPlacer {
             slot = InventorySlotType.STORAGE;
         }
 
+        if (d instanceof IrisCustomData data) {
+            block.setBlockData(data.getBase(), false);
+            Iris.warn("Tried to place custom block at " + x + ", " + y + ", " + z + " which is not supported!");
+        } else block.setBlockData(d, false);
+
         if (slot != null) {
             RNG rx = new RNG(Cache.key(x, z));
             KList<IrisLootTable> tables = engine.getLootTables(rx, block);
             if (IrisSettings.get().getGenerator().useVanillaStructureLootSystem) {
                 String dimNameLowerCase = getEngine().getDimension().getName().toLowerCase();
                 IrisLootTable randomTable = tables.getRandom();
-                String randomTableRelativePath = randomTable
-                    .getLoadFile()
-                    .getPath()
-                    .replaceFirst(String.format("[\\/]?plugins/Iris/packs/%s/loot[\\/]?", dimNameLowerCase), "");
-                VanillaLoot.setLootTable(
-                    NamespacedKey.fromString(String.format("%s:chests/%s", dimNameLowerCase, randomTableRelativePath)),
-                    block.getLocation()
-                );
-                return;
+                if (randomTable != null && randomTable.getLoadFile() != null) {
+                    String randomTableRelativePath = randomTable
+                        .getLoadFile()
+                        .getPath()
+                        .replaceFirst(String.format("[\\/]?plugins/Iris/packs/%s/loot[\\/]?", dimNameLowerCase), "")
+                        .replaceAll("\\Q.json\\E", "");
+                    VanillaLoot.setLootTable(
+                        NamespacedKey.fromString(String.format("%s:chests/%s", dimNameLowerCase, randomTableRelativePath)),
+                        block.getLocation()
+                    );
+                    return;
+                }
             }
 
             try {
@@ -120,13 +128,6 @@ public class WorldObjectPlacer implements IObjectPlacer {
             } catch (Throwable e) {
                 Iris.reportError(e);
             }
-        }
-
-        if (d instanceof IrisCustomData data) {
-            block.setBlockData(data.getBase());
-            Iris.warn("Tried to place custom block at " + x + ", " + y + ", " + z + " which is not supported!");
-        } else {
-            block.setBlockData(d);
         }
     }
 
@@ -168,5 +169,14 @@ public class WorldObjectPlacer implements IObjectPlacer {
     @Override
     public void setTile(int xx, int yy, int zz, TileData tile) {
         tile.toBukkitTry(world.getBlockAt(xx, yy + world.getMinHeight(), zz));
+    }
+
+    @Override
+    public <T> void setData(int xx, int yy, int zz, T data) {
+    }
+
+    @Override
+    public <T> T getData(int xx, int yy, int zz, Class<T> t) {
+        return null;
     }
 }

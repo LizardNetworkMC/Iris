@@ -18,6 +18,7 @@
  *
  * Changes (YYYY-MM-DD):
  *  - 2025-01-23 @xIRoXaSx: Refactored method to use centralized constants for the Iris pack.
+ *  - 2026-06-13 @xIRoXaSx: Fixed download target variable (was `pack`, must be `dl`); guarded listFiles() null return.
  */
 
 package com.volmit.iris.core.pack;
@@ -121,11 +122,17 @@ public class IrisPackRepository {
             File dl = new File(Iris.getTemp(), "dltk-" + UUID.randomUUID() + ".zip");
             File work = new File(Iris.getTemp(), "extk-" + UUID.randomUUID());
             new JobCollection(Form.capitalize(getRepo()),
-                    new DownloadJob(toURL(), pack),
+                    new DownloadJob(toURL(), dl),
                     new SingleJob("Extracting", () -> ZipUtil.unpack(dl, work)),
                     new SingleJob("Installing", () -> {
+                        File[] extracted = work.listFiles();
+                        if (extracted == null || extracted.length == 0) {
+                            Iris.error("Extraction produced no files from pack download: " + getRepo());
+                            return;
+                        }
+
                         try {
-                            FileUtils.copyDirectory(work.listFiles()[0], pack);
+                            FileUtils.copyDirectory(extracted[0], pack);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
