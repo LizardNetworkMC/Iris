@@ -1,0 +1,16 @@
+FROM eclipse-temurin:21-jdk@sha256:949f7645022e8cd5cd65eac4b342e7505c86b721b6338f8b677c6f2edc180262
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        git \
+        openssh-client \
+        unzip \
+    && usermod --groups ubuntu ubuntu \
+    && rm -rf /var/lib/apt/lists/*
+
+USER ubuntu

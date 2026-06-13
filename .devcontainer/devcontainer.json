@@ -1,0 +1,30 @@
+{
+    "name": "dev-iris",
+    "build": {
+        "dockerfile": "Containerfile"
+    },
+    "remoteUser": "ubuntu",
+    "containerUser": "ubuntu",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "containerEnv": {
+        "JAVA_HOME": "/opt/java/openjdk",
+        "GRADLE_USER_HOME": "/home/ubuntu/.gradle"
+    },
+    "mounts": [
+        "source=${localEnv:HOME:/home/roxas}/.codex,target=/home/ubuntu/.codex,type=bind,readonly"
+    ],
+    "runArgs": [
+        "--cap-drop=ALL",
+        "--security-opt=no-new-privileges:true",
+        "--name=dev-${localWorkspaceFolderBasename}"
+    ],
+    "customizations": {
+        "zed": {
+            "extensions": ["java"]
+        },
+        "vscode": {
+            "extensions": ["redhat.java", "vscjava.vscode-gradle"]
+        }
+    }
+}
