@@ -21,22 +21,13 @@ package com.volmit.iris.util.mantle;
 import com.volmit.iris.Iris;
 import com.volmit.iris.engine.EnginePanic;
 import com.volmit.iris.engine.data.cache.Cache;
-import com.volmit.iris.util.collection.KSet;
+import com.volmit.iris.util.data.Varint;
 import com.volmit.iris.util.documentation.ChunkCoordinates;
-import com.volmit.iris.util.format.C;
-import com.volmit.iris.util.format.Form;
 import com.volmit.iris.util.io.CountingDataInputStream;
-import com.volmit.iris.util.scheduling.PrecisionStopwatch;
 import lombok.Getter;
-import net.jpountz.lz4.LZ4BlockInputStream;
-import net.jpountz.lz4.LZ4BlockOutputStream;
 
 import java.io.*;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
@@ -44,10 +35,13 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  * Tectonic Plates are fully atomic & thread safe
  */
 public class TectonicPlate {
-    private static final KSet<Thread> errors = new KSet<>();
+    private static final ThreadLocal<Boolean> errors = ThreadLocal.withInitial(() -> false);
+    public static final int MISSING = -1;
+    public static final int CURRENT = 1;
 
     private final int sectionHeight;
     private final AtomicReferenceArray<MantleChunk> chunks;
+    private final AtomicBoolean closed;
 
     @Getter
     private final int x;
@@ -63,6 +57,7 @@ public class TectonicPlate {
     public TectonicPlate(int worldHeight, int x, int z) {
         this.sectionHeight = worldHeight >> 4;
         this.chunks = new AtomicReferenceArray<>(1024);
+        this.closed = new AtomicBoolean(false);
         this.x = x;
         this.z = z;
     }
@@ -74,11 +69,12 @@ public class TectonicPlate {
      * @param din         the data input
      * @throws IOException            shit happens yo
      */
-    public TectonicPlate(int worldHeight, CountingDataInputStream din) throws IOException {
+    public TectonicPlate(int worldHeight, CountingDataInputStream din, boolean versioned) throws IOException {
         this(worldHeight, din.readInt(), din.readInt());
         if (!din.markSupported())
             throw new IOException("Mark not supported!");
 
+        int v = versioned ? Varint.readUnsignedVarInt(din) : MISSING;
         for (int i = 0; i < chunks.length(); i++) {
             long size = din.readInt();
             if (size == 0) continue;
@@ -86,7 +82,7 @@ public class TectonicPlate {
 
             try {
                 Iris.addPanic("read-chunk", "Chunk[" + i + "]");
-                chunks.set(i, new MantleChunk(sectionHeight, din));
+                chunks.set(i, new MantleChunk(v, sectionHeight, din));
                 EnginePanic.saveLast();
             } catch (Throwable e) {
                 long end = start + size;
@@ -103,30 +99,6 @@ public class TectonicPlate {
         }
     }
 
-    public static TectonicPlate read(int worldHeight, File file) throws IOException {
-        try (FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.SYNC)) {
-            fc.lock();
-
-            InputStream fin = Channels.newInputStream(fc);
-            LZ4BlockInputStream lz4 = new LZ4BlockInputStream(fin);
-            BufferedInputStream bis = new BufferedInputStream(lz4);
-            try (CountingDataInputStream din = CountingDataInputStream.wrap(bis)) {
-                return new TectonicPlate(worldHeight, din);
-            }
-        } finally {
-            if (errors.remove(Thread.currentThread())) {
-                File dump = Iris.instance.getDataFolder("dump", file.getName() + ".bin");
-                try (FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.SYNC)) {
-                    fc.lock();
-
-                    InputStream fin = Channels.newInputStream(fc);
-                    LZ4BlockInputStream lz4 = new LZ4BlockInputStream(fin);
-                    Files.copy(lz4, dump.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-        }
-    }
-
     public boolean inUse() {
         for (int i = 0; i < chunks.length(); i++) {
             MantleChunk chunk = chunks.get(i);
@@ -134,6 +106,20 @@ public class TectonicPlate {
                 return true;
         }
         return false;
+    }
+
+    public void close() throws InterruptedException {
+        closed.set(true);
+        for (int i = 0; i < chunks.length(); i++) {
+            MantleChunk chunk = chunks.get(i);
+            if (chunk != null) {
+                chunk.close();
+            }
+        }
+    }
+
+    public boolean isClosed() {
+        return closed.get();
     }
 
     /**
@@ -189,34 +175,18 @@ public class TectonicPlate {
      */
     @ChunkCoordinates
     public MantleChunk getOrCreate(int x, int z) {
-        return chunks.updateAndGet(index(x, z), chunk -> {
-            if (chunk != null) return chunk;
-            return new MantleChunk(sectionHeight, x & 31, z & 31);
-        });
+        final int index = index(x, z);
+        final MantleChunk chunk = chunks.get(index);
+        if (chunk != null) return chunk;
+
+        final MantleChunk instance = new MantleChunk(sectionHeight, x & 31, z & 31);
+        final MantleChunk value = chunks.compareAndExchange(index, null, instance);
+        return value == null ? instance : value;
     }
 
     @ChunkCoordinates
     private int index(int x, int z) {
         return Cache.to1D(x, z, 0, 32, 32);
-    }
-
-    /**
-     * Write this tectonic plate to file
-     *
-     * @param file the file to writeNodeData it to
-     * @throws IOException shit happens
-     */
-    public void write(File file) throws IOException {
-        PrecisionStopwatch p = PrecisionStopwatch.start();
-        try (FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.SYNC)) {
-            fc.lock();
-
-            OutputStream fos = Channels.newOutputStream(fc);
-            try (DataOutputStream dos = new DataOutputStream(new LZ4BlockOutputStream(fos))) {
-                write(dos);
-                Iris.debug("Saved Tectonic Plate " + C.DARK_GREEN + file.getName().split("\\Q.\\E")[0] + C.RED + " in " + Form.duration(p.getMilliseconds(), 2));
-            }
-        }
     }
 
     /**
@@ -228,6 +198,7 @@ public class TectonicPlate {
     public void write(DataOutputStream dos) throws IOException {
         dos.writeInt(x);
         dos.writeInt(z);
+        Varint.writeUnsignedVarInt(CURRENT, dos);
 
         var bytes = new ByteArrayOutputStream(8192);
         var sub = new DataOutputStream(bytes);
@@ -249,6 +220,14 @@ public class TectonicPlate {
     }
 
     public static void addError() {
-        errors.add(Thread.currentThread());
+        errors.set(true);
+    }
+
+    public static boolean hasError() {
+        try {
+            return errors.get();
+        } finally {
+            errors.remove();
+        }
     }
 }

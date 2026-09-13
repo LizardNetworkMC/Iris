@@ -14,15 +14,39 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Added 512 MB decompression cap to prevent zip-bomb DoS.
  */
 
 package com.volmit.iris.util.io;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.volmit.iris.Iris;
 import com.volmit.iris.util.format.Form;
+import com.volmit.iris.util.scheduling.J;
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOFunction;
+import lombok.SneakyThrows;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
 import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -71,11 +95,13 @@ public class IO {
         LINE_SEPARATOR = buf.toString();
     }
 
+    private static final long MAX_DECOMPRESS_BYTES = 512L * 1024 * 1024; // 512 MB guard against zip bombs
+
     public static String decompress(String gz) throws IOException {
         ByteArrayInputStream bin = new ByteArrayInputStream(Base64.getUrlDecoder().decode(gz));
         GZIPInputStream gzi = new GZIPInputStream(bin);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
-        IO.fullTransfer(gzi, boas, 256);
+        transferBounded(gzi, boas);
         gzi.close();
 
         return boas.toString();
@@ -85,10 +111,23 @@ public class IO {
         ByteArrayInputStream bin = new ByteArrayInputStream(Base64.getUrlDecoder().decode(compressed));
         GZIPInputStream gzi = new GZIPInputStream(bin);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
-        IO.fullTransfer(gzi, boas, 256);
+        transferBounded(gzi, boas);
         gzi.close();
 
         return boas.toByteArray();
+    }
+
+    private static void transferBounded(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[8192];
+        long total = 0;
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            total += n;
+            if (total > MAX_DECOMPRESS_BYTES) {
+                throw new IOException("Decompressed data exceeds limit of " + MAX_DECOMPRESS_BYTES + " bytes");
+            }
+            out.write(buf, 0, n);
+        }
     }
 
     public static String encode(byte[] data) {
@@ -134,8 +173,7 @@ public class IO {
                     continue;
                 }
 
-                try (var fin = new FileInputStream(file)) {
-                    var din = new CheckedInputStream(fin, crc);
+                try (var din = new CheckedInputStream(readDeterministic(file), crc)) {
                     fullTransfer(din, new VoidOutputStream(), 8192);
                 } catch (IOException e) {
                     Iris.reportError(e);
@@ -152,10 +190,45 @@ public class IO {
         return 0;
     }
 
+    public static InputStream readDeterministic(File file) throws IOException {
+        if (!file.getName().endsWith(".json"))
+            return new FileInputStream(file);
+
+        JsonElement json;
+        try (FileReader reader = new FileReader(file)) {
+            json = JsonParser.parseReader(reader);
+        } catch (Throwable e) {
+            throw new IOException("Failed to read json file " + file, e);
+        }
+
+        var queue = new LinkedList<JsonElement>();
+        queue.add(json);
+
+        while (!queue.isEmpty()) {
+            var element = queue.pop();
+            Collection<JsonElement> add = List.of();
+
+            if (element instanceof JsonObject obj) {
+                var map = obj.asMap();
+                var sorted = new TreeMap<>(map);
+                map.clear();
+                map.putAll(sorted);
+
+                add = sorted.values();
+            } else if (element instanceof JsonArray array) {
+                add = array.asList();
+            }
+
+            add.stream().filter(e -> e.isJsonObject() || e.isJsonArray()).forEach(queue::add);
+        }
+
+        return toInputStream(json.toString());
+    }
+
     public static String hash(File b) {
         try {
             MessageDigest d = MessageDigest.getInstance("SHA-256");
-            DigestInputStream din = new DigestInputStream(new FileInputStream(b), d);
+            DigestInputStream din = new DigestInputStream(readDeterministic(b), d);
             fullTransfer(din, new VoidOutputStream(), 8192);
             din.close();
             return bytesToHex(din.getMessageDigest().digest());
@@ -550,6 +623,25 @@ public class IO {
         if (preserveFileDate) {
             destFile.setLastModified(srcFile.lastModified());
         }
+    }
+
+    public static void copyDirectory(Path source, Path target) throws IOException {
+        Files.walk(source).forEach(sourcePath -> {
+            Path targetPath = target.resolve(source.relativize(sourcePath));
+
+            try {
+                if (Files.isDirectory(sourcePath)) {
+                    if (!Files.exists(targetPath)) {
+                        Files.createDirectories(targetPath);
+                    }
+                } else {
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+                }
+            } catch (IOException e) {
+                Iris.error("Failed to copy " + targetPath);
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -1601,5 +1693,50 @@ public class IO {
 
         int ch2 = input2.read();
         return (ch2 == -1);
+    }
+
+    @SneakyThrows
+    public static void write(File file, Document doc) {
+        file.getParentFile().mkdirs();
+        try (var writer = new FileWriter(file)) {
+            new XMLWriter(writer, OutputFormat.createPrettyPrint())
+                    .write(doc);
+        }
+    }
+
+    @SneakyThrows
+    public static Document read(File file) {
+        if (file.exists()) return new SAXReader().read(file);
+        var doc = DocumentHelper.createDocument();
+        doc.addElement("project")
+                .addAttribute("version", "4");
+        return doc;
+    }
+
+    public static <T extends Closeable> void write(File file, IOFunction<FileOutputStream, T> builder, IOConsumer<T> action) throws IOException {
+        File dir = new File(file.getParentFile(), ".tmp");
+        dir.mkdirs();
+        dir.deleteOnExit();
+        File temp = File.createTempFile("iris",".bin", dir);
+        try (var target = FileChannel.open(file.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.SYNC)) {
+            lock(target);
+
+            try (var out = builder.apply(new FileOutputStream(temp))) {
+                action.accept(out);
+            }
+            Files.copy(temp.toPath(), Channels.newOutputStream(target));
+            target.truncate(temp.length());
+        } finally {
+            temp.delete();
+        }
+    }
+
+    public static FileLock lock(FileChannel channel) throws IOException {
+        while (true) {
+            try {
+                return channel.lock();
+            } catch (OverlappingFileLockException e) {}
+            J.sleep(1);
+        }
     }
 }

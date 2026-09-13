@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Updated loadAnyObject() calls to pass data() parameter.
  */
 
 package com.volmit.iris.core.commands;
@@ -48,7 +51,7 @@ public class CommandJigsaw implements DecreeExecutor {
             IrisJigsawPiece piece
     ) {
         File dest = piece.getLoadFile();
-        new JigsawEditor(player(), piece, IrisData.loadAnyObject(piece.getObject()), dest);
+        new JigsawEditor(player(), piece, IrisData.loadAnyObject(piece.getObject(), data()), dest);
     }
 
     @Decree(description = "Place a jigsaw structure")
@@ -78,7 +81,7 @@ public class CommandJigsaw implements DecreeExecutor {
             @Param(description = "The object to use for this piece", customHandler = ObjectHandler.class)
             String object
     ) {
-        IrisObject o = IrisData.loadAnyObject(object);
+        IrisObject o = IrisData.loadAnyObject(object, data());
 
         if (object == null) {
             sender().sendMessage(C.RED + "Failed to find existing object");

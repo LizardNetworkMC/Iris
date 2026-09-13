@@ -14,13 +14,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed dead evaluate() methods that used javax.script.ScriptEngine (security: no JS eval).
  */
 
 package com.volmit.iris.util.math;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.util.regex.Matcher;
 
 /**
@@ -289,45 +289,6 @@ public class M {
         }
 
         return (T) Double.valueOf(min);
-    }
-
-    /**
-     * Evaluates an expression using javascript engine and returns the double
-     * result. This can take variable parameters, so you need to define them.
-     * Parameters are defined as $[0-9]. For example evaluate("4$0/$1", 1, 2); This
-     * makes the expression (4x1)/2 == 2. Keep note that you must use 0-9, you
-     * cannot skip, or start at a number other than 0.
-     *
-     * @param expression the expression with variables
-     * @param args       the arguments/variables
-     * @return the resulting double value
-     * @throws ScriptException           ... gg
-     * @throws IndexOutOfBoundsException learn to count
-     */
-    public static double evaluate(String expression, Double... args) throws ScriptException, IndexOutOfBoundsException {
-        for (int i = 0; i < args.length; i++) {
-            String current = "$" + i;
-
-            if (expression.contains(current)) {
-                expression = expression.replaceAll(Matcher.quoteReplacement(current), args[i] + "");
-            }
-        }
-
-        return evaluate(expression);
-    }
-
-    /**
-     * Evaluates an expression using javascript engine and returns the double
-     *
-     * @param expression the mathimatical expression
-     * @return the double result
-     * @throws ScriptException ... gg
-     */
-    public static double evaluate(String expression) throws ScriptException {
-        ScriptEngineManager mgr = new ScriptEngineManager();
-        ScriptEngine scriptEngine = mgr.getEngineByName("JavaScript");
-
-        return Double.parseDouble(scriptEngine.eval(expression).toString());
     }
 
     /**

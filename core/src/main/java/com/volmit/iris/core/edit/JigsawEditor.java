@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Refactored editor map access to use compute().
  */
 
 package com.volmit.iris.core.edit;
@@ -61,14 +64,14 @@ public class JigsawEditor implements Listener {
     private Location target;
 
     public JigsawEditor(Player player, IrisJigsawPiece piece, IrisObject object, File saveLocation) {
-        if (editors.containsKey(player)) {
-            editors.get(player).close();
-        }
+        if (object == null) throw new RuntimeException("Object is null! " + piece.getObject());
+        editors.compute(player, ($, current) -> {
+            if (current != null) {
+                current.exit();
+            }
+            return this;
+        });
 
-        editors.put(player, this);
-        if (object == null) {
-            throw new RuntimeException("Object is null! " + piece.getObject());
-        }
         this.object = object;
         this.player = player;
         origin = player.getLocation().clone().add(0, 7, 0);

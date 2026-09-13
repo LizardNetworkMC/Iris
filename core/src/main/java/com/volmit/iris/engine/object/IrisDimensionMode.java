@@ -14,10 +14,15 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed Kotlin scripting system (security: packs must not execute arbitrary code).
  */
 
 package com.volmit.iris.engine.object;
 
+import com.volmit.iris.engine.framework.Engine;
+import com.volmit.iris.engine.framework.EngineMode;
 import com.volmit.iris.engine.object.annotations.Desc;
 import com.volmit.iris.engine.object.annotations.Snippet;
 import lombok.AllArgsConstructor;
@@ -35,4 +40,7 @@ public class IrisDimensionMode {
     @Desc("The dimension type")
     private IrisDimensionModeType type = IrisDimensionModeType.OVERWORLD;
 
+    public EngineMode create(Engine engine) {
+        return type.create(engine);
+    }
 }

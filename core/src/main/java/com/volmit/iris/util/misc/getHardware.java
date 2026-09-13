@@ -1,3 +1,24 @@
+/*
+ * Iris is a World Generator for Minecraft Bukkit Servers
+ * Copyright (c) 2022 Arcane Arts (Volmit Software)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Changes (YYYY-MM-DD):
+ *  - 2026-06-13 @xIRoXaSx: Removed network interface enumeration (no host network scanning).
+ */
+
 package com.volmit.iris.util.misc;
 
 
@@ -12,11 +33,8 @@ import oshi.software.os.OSFileStore;
 import oshi.software.os.OperatingSystem;
 import oshi.util.EdidUtil;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -163,21 +181,4 @@ public class getHardware {
         return null;
     }
 
-    public static KList<String> getInterfaces() {
-        try {
-            KList<String> interfaces = new KList<>();
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            for (NetworkInterface ni : Collections.list(networkInterfaces)) {
-                interfaces.add(C.BLUE + "Display Name: %s", ni.getDisplayName());
-                Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
-                for (InetAddress ia : Collections.list(inetAddresses)) {
-                    interfaces.add("IP: %s", ia.getHostAddress());
-                }
-                return interfaces.copy();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 }

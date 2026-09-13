@@ -48,6 +48,6 @@ org.jetbrains:annotations:24.1.0=compileClasspath,testCompileClasspath
 org.ow2.asm:asm:9.2=compileClasspath
 org.projectlombok:lombok:1.18.36=annotationProcessor,compileClasspath
 org.slf4j:slf4j-api:2.0.16=compileClasspath
-org.zeroturnaround:zt-zip:1.14=compileClasspath
+org.zeroturnaround:zt-zip:1.17=compileClasspath
 rhino:js:1.7R2=compileClasspath
 empty=shadow,testAnnotationProcessor
